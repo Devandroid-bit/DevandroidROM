@@ -135,12 +135,14 @@ for i in "${FIRMWARES[@]}"; do
         [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-        LOG "- Downloading via wget (bypassing quota limit & confirmation warning)..."
-        wget --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate -O- "https://docs.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" > /dev/null
+        LOG "- Downloading via wget (bypassing Google Drive virus warning)..."
         
-        CONFIRM_CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookies.txt)"
-        [ -z "$CONFIRM_CODE" ] && CONFIRM_CODE="confirm"
+        # 1. Initial request to capture cookies and extract the confirmation token for large files
+        CONFIRM_CODE="$(wget --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate -qO- "https://docs.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p')"
+        
+        [ -z "$CONFIRM_CODE" ] && CONFIRM_CODE="t"
 
+        # 2. Actual firmware download using the extracted token and session cookies
         wget --load-cookies /tmp/cookies.txt --no-check-certificate -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://docs.google.com/uc?export=download&confirm=$CONFIRM_CODE&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" || exit 1
 
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
