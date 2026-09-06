@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-VERSION_MAJOR=1
+VERSION_MAJOR=2
 VERSION_MINOR=0
 VERSION_PATCH=0
 
