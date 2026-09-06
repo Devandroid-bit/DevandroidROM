@@ -15,12 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# Device configuration file for Galaxy N10+ (Exynos) (d2s)
-TARGET_NAME="Galaxy Note10+ (Exynos)"
-TARGET_CODENAME="d2s"
-TARGET_ASSERT_MODEL=("SM-N975F")
+# Device configuration file for Galaxy N10+ 5G (Exynos) (d2xks)
+TARGET_NAME="Galaxy Note10+ 5G (Exynos)"
+TARGET_CODENAME="d2xks"
+TARGET_ASSERT_MODEL=("SM-N976N")
 TARGET_PLATFORM="exynos9825"
-TARGET_FIRMWARE="SM-N975F/BTU/358780109886445" # Some CSCs didn't received august 2023 update and since we don't use target's CSC we don't care about it
+TARGET_FIRMWARE="SM-N976N/KOO/358592108973789" # Some CSCs didn't received august 2023 update and since we don't use target's CSC we don't care about it
 TARGET_EXTRA_FIRMWARES=("")
 TARGET_API_LEVEL=31
 TARGET_PRODUCT_FIRST_API_LEVEL=28
