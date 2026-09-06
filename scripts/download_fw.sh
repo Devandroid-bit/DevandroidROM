@@ -135,8 +135,8 @@ for i in "${FIRMWARES[@]}"; do
         [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-        LOG "- Downloading via wget..."
-        wget -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://drive.usercontent.google.com/download?id=1yi5pTwY6b3Z15oMCPbnSip4otmVbKpX8&export=download&authuser=0&confirm=t&uuid=16116288-9b77-49b9-9a51-31a23329e688&at=AMrWOn2S0Tr-2lzt1rz0WLoonWv9%3A1788696216295" || exit 1
+        LOG "- Downloading via wget (bypassing quota limit)..."
+        wget --no-check-certificate -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://docs.google.com/uc?export=download&id=1yi5pTwY6b3Z15oMCPbnSip4otmVbKpX8&confirm=t" || exit 1
 
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
