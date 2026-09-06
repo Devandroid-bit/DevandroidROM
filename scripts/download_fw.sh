@@ -135,12 +135,48 @@ for i in "${FIRMWARES[@]}"; do
         [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-        LOG "- Downloading via curl and direct token extraction..."
-        # 1. Fetch confirmation token using curl
-        CONFIRM_TOKEN=$(curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p')
-        [ -z "$CONFIRM_TOKEN" ] && CONFIRM_TOKEN="t"
-        # 2. Download the actual file using curl with the session cookie and token
-        curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=$CONFIRM_TOKEN&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" -o "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" || exit 1
+                LOG "- Manually downloading SOURCE (${MODEL}) firmware from Google Drive"
+        ODIN_DIR="$OUT_DIR/odin"
+        mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
+        
+        LOG "  - Cleaning download directory..."
+        rm -rf "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
+
+        LOG "- Downloading via curl (Google Drive large-file confirm-token flow)..."
+        FILE_ID="15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat"
+        DEST="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
+        COOKIES="$(mktemp)"
+        
+        # Step 1: hit the download endpoint, capture the confirm token Google issues for large files
+        CONFIRM="$(curl -sc "$COOKIES" "https://drive.google.com/uc?export=download&id=${FILE_ID}" \
+            | grep -o 'confirm=[a-zA-Z0-9_-]*' | head -n1 | cut -d= -f2)"
+        if [ -z "$CONFIRM" ]; then
+            # Fallback for the newer Drive UI, token sometimes embedded differently
+            CONFIRM="$(curl -sc "$COOKIES" "https://drive.google.com/uc?export=download&id=${FILE_ID}" \
+                | grep -o 'confirm=[^&]*&amp;id=' | head -n1 | sed 's/confirm=//;s/&amp;id=//')"
+        fi
+
+        LOG "- Confirm token: ${CONFIRM:-<none found>}"
+
+        # Step 2: actual download using the confirm token + session cookie from step 1
+        curl -Lb "$COOKIES" \
+            "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" \
+            -o "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" || exit 1
+
+        rm -f "$COOKIES"
+
+        if [ ! -s "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" ]; then
+            LOGW "\033[0;31m! curl download produced an empty file - Drive quota likely still active!\033[0m"
+            exit 1
+        fi
+
+        # Sanity check: a real firmware zip is multi-GB; anything tiny is Google's HTML warning page, not the file
+        FILESIZE="$(stat -c%s "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" 2>/dev/null || stat -f%z "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip")"
+        if [ "$FILESIZE" -lt 1000000 ]; then
+            LOGW "\033[0;31m! Downloaded file is only ${FILESIZE} bytes - this is Google's HTML page, not the firmware. Quota still blocking.\033[0m"
+            cat "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
+            exit 1
+        fi
 
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
