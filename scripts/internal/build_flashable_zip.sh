@@ -613,7 +613,7 @@ PRINT_HEADER()
     echo    'ui_print("Proceeding...!");'
     echo    'ui_print(" ");'
     echo    'ui_print("****************************************************");'
-    echo    'ui_print("       D E V A N D R O I D ---- R O M     ONEUI 8.0         ");'
+    echo    'ui_print("       DevandroidROM     ----     ONEUI 8.0         ");'
     echo    'ui_print("****************************************************");'
 }
 # ]
