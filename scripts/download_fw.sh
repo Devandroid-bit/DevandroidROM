@@ -136,12 +136,12 @@ for i in "${FIRMWARES[@]}"; do
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
         LOG "- Downloading via wget (bypassing quota limit & confirmation warning)..."
-        wget --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate -O- "https://docs.google.com/uc?export=download&id=1yi5pTwY6b3Z15oMCPbnSip4otmVbKpX8" > /dev/null
+        wget --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate -O- "https://docs.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" > /dev/null
         
         CONFIRM_CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookies.txt)"
         [ -z "$CONFIRM_CODE" ] && CONFIRM_CODE="confirm"
 
-        wget --load-cookies /tmp/cookies.txt --no-check-certificate -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://docs.google.com/uc?export=download&confirm=$CONFIRM_CODE&id=1yi5pTwY6b3Z15oMCPbnSip4otmVbKpX8" || exit 1
+        wget --load-cookies /tmp/cookies.txt --no-check-certificate -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://docs.google.com/uc?export=download&confirm=$CONFIRM_CODE&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" || exit 1
 
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
