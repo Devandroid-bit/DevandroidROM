@@ -1,0 +1,102 @@
+name: Import product_feature
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-product_feature
+  cancel-in-progress: false
+
+jobs:
+  import-prebuilts:
+    name: Import product_feature
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout OneUI8.5 branch
+        uses: actions/checkout@v4
+        with:
+          ref: sixteen
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone source repository
+        run: |
+          git clone \
+            --depth=1 \
+            --branch sixteen \
+            https://github.com/ArtisanROM/ArtisanROM.git \
+            source-repo
+
+      - name: Import product_feature
+        run: |
+          set -e
+
+          SOURCE_DIR="source-repo/unica/patches/product_feature"
+          DEST_DIR="unica/patches/product_feature"
+
+          if [ ! -d "$SOURCE_DIR" ]; then
+            echo "::error::Source directory does not exist: $SOURCE_DIR"
+            exit 1
+          fi
+
+          echo "Removing existing prebuilts..."
+          rm -rf "$DEST_DIR"
+
+          echo "Creating destination directory..."
+          mkdir -p "$DEST_DIR"
+
+          echo "Copying product_feature..."
+          rsync -a \
+            --delete \
+            "$SOURCE_DIR/" \
+            "$DEST_DIR/"
+
+          echo "Import completed successfully."
+
+      - name: Check imported files
+        run: |
+          echo "Total files imported:"
+          find unica/patches/product_feature -type f | wc -l
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git add -A unica/patches/product_feature
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected."
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git commit -m "prebuilts: import product_feature (Credits: @ArisanROM)"
+
+      - name: Rebase onto latest sixteen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git fetch origin sixteen
+          git rebase origin/sixteen
+
+      - name: Push changes to sixteen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git push origin HEAD:sixteen
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf source-repo
