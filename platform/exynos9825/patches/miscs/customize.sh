@@ -34,11 +34,6 @@ SET_PROP "vendor" "ro.surface_flinger.enable_frame_rate_override" "false"
 SET_PROP "vendor" "ro.surface_flinger.use_content_detection_for_refresh_rate" "false"
 LOG_STEP_OUT
 
-LOG_STEP_IN "- Disabling verbose Samsung system logging (persist.log.level/semlevel)"
-SET_PROP "system" "persist.log.level" "0"
-SET_PROP "system" "persist.log.semlevel" "0"
-LOG_STEP_OUT
-
 LOG_STEP_IN "- Enabling Vulkan"
 SET_PROP "vendor" "ro.hwui.use_vulkan" "true"
 SET_PROP "vendor" "debug.hwui.use_hint_manager" "true"
