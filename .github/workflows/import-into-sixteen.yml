@@ -1,0 +1,63 @@
+name: Import mods into sixteen
+on: workflow_dispatch
+
+jobs:
+  import-folders:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout s22-Ultra
+        uses: actions/checkout@v4
+        with:
+          ref: sixteen
+          fetch-depth: 0
+
+      - name: Fetch s22-Ultra branch
+        run: git fetch origin s22-Ultra 
+
+      - name: Copy folders from s22-Ultra
+        run: |
+          FOLDERS=(
+            "target/d2s"
+            "target/d2x"
+            "target/d2xks"
+          )
+          for f in "${FOLDERS[@]}"; do
+            echo "== Importing $f =="
+            rm -rf "$f"
+            mkdir -p "$(dirname "$f")"
+            if git checkout origin/s22-Ultra -- "$f"; then
+              echo "OK: $f imported"
+            else
+              echo "WARNING: $f not found in sixteen, skipping"
+            fi
+          done
+
+      - name: Configure Bot Identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and Push Update
+        run: |
+          FOLDERS=(
+            "target/d2s"
+            "target/d2x"
+            "target/d2xks"
+          )
+          for f in "${FOLDERS[@]}"; do
+            if [ -e "$f" ]; then
+              git add "$f"
+            else
+              echo "Skipping add: $f does not exist"
+            fi
+          done
+
+          if git diff --cached --quiet; then
+            echo "No changes detected. s22-Ultra is already up to date."
+          else
+            git commit -m "Import targets from s22-Ultra branch"
+            git pull --rebase origin sixteen
+            git push origin sixteen
+          fi
