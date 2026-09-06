@@ -57,5 +57,7 @@ system/etc/permissions/privapp-permissions-com.samsung.android.hwresourceshare.s
 system/etc/sysconfig/preinstalled-packages-com.samsung.android.hwresourceshare.storage.xml
 system/etc/ksmbd.conf
 system/priv-app/StorageShare
+DevGPUDriver-EX2200
+GameDriver-EX2200
 "
 
