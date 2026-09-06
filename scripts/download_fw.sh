@@ -135,9 +135,12 @@ for i in "${FIRMWARES[@]}"; do
         [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-        LOG "- Downloading via gdown..."
-        pip install --quiet gdown
-        gdown "https://drive.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" || exit 1
+        LOG "- Downloading via curl and direct token extraction..."
+        # 1. Fetch confirmation token using curl
+        CONFIRM_TOKEN=$(curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1/p')
+        [ -z "$CONFIRM_TOKEN" ] && CONFIRM_TOKEN="t"
+        # 2. Download the actual file using curl with the session cookie and token
+        curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=$CONFIRM_TOKEN&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" -o "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" || exit 1
 
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
