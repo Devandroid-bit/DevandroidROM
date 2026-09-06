@@ -135,9 +135,9 @@ for i in "${FIRMWARES[@]}"; do
         [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-        LOG "- Downloading via gdown (handling Google Drive quota & virus warning)..."
+        LOG "- Downloading via gdown..."
         pip install --quiet gdown
-        gdown --id "15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" || exit 1
+        gdown "https://drive.google.com/uc?export=download&id=15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat" -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" || exit 1
 
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
