@@ -127,26 +127,99 @@ PREPARE_SCRIPT "$@"
 for i in "${FIRMWARES[@]}"; do
     PARSE_FIRMWARE_STRING "$i" || exit 1
 
-    LOG_STEP_IN "- Téléchargement manuel du firmware $MODEL depuis Google Drive"
+    # Condition to apply manual Google Drive download exclusively for the source firmware
+    if [[ "$i" == "$SOURCE_FIRMWARE" ]]; then
+        LOG_STEP_IN "- Manually downloading SOURCE ($MODEL) firmware from Google Drive"
 
-    LOG "- Nettoyage du répertoire de téléchargement..."
-    [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
-    mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
+        LOG "- Cleaning download directory..."
+        [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
+        mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-    LOG "- Téléchargement via wget..."
-    wget -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://drive.usercontent.google.com/download?id=1yi5pTwY6b3Z15oMCPbnSip4otmVbKpX8&export=download&authuser=0&confirm=t&uuid=16116288-9b77-49b9-9a51-31a23329e688&at=AMrWOn2S0Tr-2lzt1rz0WLoonWv9%3A1788696216295" || exit 1
+        LOG "- Downloading via wget..."
+        wget -O "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip" "https://drive.usercontent.google.com/download?id=1yi5pTwY6b3Z15oMCPbnSip4otmVbKpX8&export=download&authuser=0&confirm=t&uuid=16116288-9b77-49b9-9a51-31a23329e688&at=AMrWOn2S0Tr-2lzt1rz0WLoonWv9%3A1788696216295" || exit 1
 
-    ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
+        ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
-    LOG "- Extracting $(basename "$ZIP_FILE")..."
-    EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -rf \"$ZIP_FILE\"" || exit 1
+        LOG "- Extracting $(basename "$ZIP_FILE")..."
+        EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -rf \"$ZIP_FILE\"" || exit 1
 
-    VERIFY_ODIN_PACKAGES
+        VERIFY_ODIN_PACKAGES
 
-    # Override du fichier de version pour bypasser les vérifications
-    echo -n "MANUAL_GDRIVE_OVERRIDE" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
+        echo -n "MANUAL_GDRIVE_OVERRIDE" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
 
-    LOG_STEP_OUT
+        LOG_STEP_OUT
+    else
+        # Original samloader logic for the target firmware
+        LATEST_FIRMWARE="$(GET_LATEST_FIRMWARE "$MODEL" "$CSC")"
+        if [ ! "$LATEST_FIRMWARE" ]; then
+            LOGE "Latest available firmware could not be fetched"
+            exit 1
+        fi
+
+        LOG_STEP_IN "- Processing TARGET $MODEL firmware with $CSC CSC"
+        LOG "- Downloaded firmware: $(cat "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" 2> /dev/null)"
+        LOG "- Extracted firmware: $(cat "$FW_DIR/${MODEL}_${CSC}/.extracted" 2> /dev/null)"
+        LOG "- Latest available firmware: $LATEST_FIRMWARE"
+
+        LOG_STEP_IN
+
+        if ! $FORCE; then
+            if [ -f "$FW_DIR/${MODEL}_${CSC}/.extracted" ]; then
+                if COMPARE_SEC_BUILD_VERSION "$(cat "$FW_DIR/${MODEL}_${CSC}/.extracted")" "$LATEST_FIRMWARE"; then
+                    LOG "\033[0;33m! This firmware has already been extracted, skipping\033[0m"
+                    LOG_STEP_OUT; LOG_STEP_OUT
+                    continue
+                fi
+            fi
+
+            if [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ]; then
+                if ! COMPARE_SEC_BUILD_VERSION "$(cat "$ODIN_DIR/${MODEL}_${CSC}/.downloaded")" "$LATEST_FIRMWARE"; then
+                    LOG "\033[0;33m! A newer firmware is available for download, use --force flag if you want to overwrite it\033[0m"
+                else
+                    LOG "\033[0;33m! This firmware has already been downloaded\033[0m"
+                fi
+                LOG_STEP_OUT; LOG_STEP_OUT
+                continue
+            fi
+        fi
+
+        LOG "- Downloading firmware..."
+        [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
+        mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
+
+        COUNT=1
+        while true; do
+            (
+            cd "$OUT_DIR"
+            STR=""
+            [ $MODEL == "SM-S731B" ] && STR=" -v S731BXXU1AYH9/S731BOXM1AYH9/S731BXXU1AYH9/S731BXXU1AYH9"
+            samloader -m "$MODEL" -r "$CSC" -i "$IMEI" -s "$SERIAL_NO" download$STR -O "$ODIN_DIR/${MODEL}_${CSC}" || exit 1
+            )
+
+            ZIP_FILE="$(find "$ODIN_DIR/${MODEL}_${CSC}" -name "*.zip" | sort -r | head -n 1)"
+            if [ ! "$ZIP_FILE" ] || [ ! -f "$ZIP_FILE" ]; then
+                if [ $COUNT -gt 10 ]; then
+                    LOGW "\033[0;31m! Download failed, check your network connection or device IMEI!\033[0m"
+                    exit 1
+                fi
+
+                LOGW "\033[0;31m! [Attempt: $COUNT] Download failed, retrying in 5 seconds...\033[0m"
+                sleep 5
+                ((COUNT++))
+            else
+                break
+            fi
+        done
+
+        LOG "- Extracting $(basename "$ZIP_FILE")..."
+        EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -rf \"$ZIP_FILE\"" || exit 1
+
+        VERIFY_ODIN_PACKAGES
+
+        echo -n "$LATEST_FIRMWARE" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
+
+        LOG_STEP_OUT; LOG_STEP_OUT
+    fi
 done
 
 deactivate
