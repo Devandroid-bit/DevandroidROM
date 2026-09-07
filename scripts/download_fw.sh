@@ -191,6 +191,15 @@ for i in "${FIRMWARES[@]}"; do
 
         EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -f \"$ZIP_FILE\"" || exit 1
 
+        # FIX: Dynamically determine version from the AP file and create the missing .downloaded flag
+        AP_FILE="$(find "$ODIN_DIR/${MODEL}_${CSC}" -name "AP_*.md5" | head -n 1)"
+        if [ -n "$AP_FILE" ]; then
+            FW_VERSION="$(basename "$AP_FILE" | cut -d'_' -f 2)"
+            echo -n "$FW_VERSION" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
+        else
+            echo -n "UNKNOWN_VERSION" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
+        fi
+
         LOG "- Firmware extraction completed successfully."
 
         LOG_STEP_OUT
