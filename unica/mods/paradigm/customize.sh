@@ -165,7 +165,10 @@ SMALI_PATCH "system" "system/priv-app/SecSettingsIntelligence/SecSettingsIntelli
 SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_MSCH_SUPPORT_NLSEARCH" "TRUE"
 LOG_STEP_OUT
 
-
+# Apps crashing due to debloat
+LOG_STEP_IN "- Fixing app crashes"
+ADD_TO_WORK_DIR "$SRC_DIR/prebuilts/extras" "system" "system/etc/permissions"
+LOG_STEP_OUT
 
 # Pet Detector in Galaxy AI
 LOG_STEP_IN "- Adding Pet Detector support in Galaxy AI features"
