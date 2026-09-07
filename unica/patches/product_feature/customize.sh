@@ -157,13 +157,33 @@ fi
 
 if ! $SOURCE_HAS_QHD_DISPLAY; then
     if $TARGET_HAS_QHD_DISPLAY; then
-        LOG_STEP_IN "- Applying multi resolution patches"  
+        LOG_STEP_IN "- Applying multi resolution patches"
         DECODE_APK "system" "system/framework/framework.jar"
         DECODE_APK "system" "system/framework/gamemanager.jar"
         DECODE_APK "system" "system/priv-app/SecSettings/SecSettings.apk"
-        APPLY_PATCH "system" "system/framework/framework.jar" "$SRC_DIR/unica/patches/product_feature/resolution/framework.jar/0001-Enable-FW_SUPPORT_MULTI_RESOLUTION.patch" 
+        # FIX 1: this used to only apply FW_SUPPORT_MULTI_RESOLUTION,
+        # which merely makes the resolution picker VISIBLE in Settings.
+        # It never applied FW_DYNAMIC_RESOLUTION_CONTROL, which is the
+        # flag that lets the framework actually accept a runtime
+        # resolution change. Use the merged, conflict-free patch that
+        # sets both (see the patch file's header for why the two
+        # originals can't safely be applied back-to-back).
+        APPLY_PATCH "system" "system/framework/framework.jar" "$SRC_DIR/unica/patches/product_feature/resolution/framework.jar/0001-Enable-FW_SUPPORT_MULTI_RESOLUTION_and_FW_DYNAMIC_RESOLUTION_CONTROL_fixed.patch"
         APPLY_PATCH "system" "system/framework/gamemanager.jar" "$SRC_DIR/unica/patches/product_feature/resolution/gamemanager.jar/0001-Enable-dynamic-resolution-control.patch"
         APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" "$SRC_DIR/unica/patches/product_feature/resolution/SecSettings.apk/0001-Enable-dynamic-resolution-control.patch"
+        # FIX 2: required for native-QHD "Plus" panels. 0001 alone keeps
+        # SecDisplayUtils on the Display.getSupportedModes()-based path
+        # (initSupportedResolutionData requires EXACTLY 3 hardware
+        # Display.Modes, then setDisplayMode() looks the target width up
+        # in that set). Note10+ / S10+ / S20-era QHD "Plus" panels only
+        # ever report ONE native Display.Mode, so that lookup always
+        # falls back to the display's CURRENT mode - i.e. it can never
+        # leave QHD. 0002 replaces that path with the legacy
+        # forced-display-size + density ratio approach
+        # (setSelectedScreenResolution), which is what those panels
+        # actually need. It must be applied to SecSettings.apk
+        # immediately after the 0001 patch above, in the same decode.
+        APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" "$SRC_DIR/unica/patches/product_feature/resolution/SecSettings.apk/0002-Backport-legacy-DYN_RESOLUTION_CONTROL-code.patch"
         SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL" "WQHD,FHD,HD"
         ADD_TO_WORK_DIR "b0sxxx" "system" "media"
 		ADD_TO_WORK_DIR "$MODPATH/resolution/system" "system" "."
