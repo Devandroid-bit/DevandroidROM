@@ -124,6 +124,7 @@ The project was originally derived from [Maniac-ROM][2], while [UN1CA][1] provid
 - **[Ocin4Ever](https://github.com/Ocin4ever)** and the [EternityROM project][3] for Galaxy Note10-series porting references, target-side configurations, and Exynos 9825 patches.
 - **[ExtremeXT](https://github.com/ExtremeXT)** and the [ExtremeROM project][4] for historical porting references and engineering practices.
 - **DevAndroid contributors and maintainers** for the continued development, adaptation, debugging, integration, and maintenance of DevAndroidROM.
+- **[Star-Seven](https://github.com/Star-Seven)** special thanks for the debugging and support. Without him, booting this ROM would not have been possible.
 
 Additional acknowledgements, inherited from the upstream Maniac-ROM development lineage:
 
@@ -174,7 +175,7 @@ Kernel and device-tree sources must always be selected according to the exact de
 
 ## References
 
-[1]: https://github.com/salvogiangri/UN1CA "UN1CA"
-[2]: https://github.com/ricci206/Maniac-ROM "Maniac-ROM"
-[3]: https://github.com/Ocin4ever/EternityROM/tree/fifteen "EternityROM"
-[4]: https://github.com/ExtremeXT/ExtremeROM/tree/fifteen "ExtremeROM"
+[1](https://github.com/salvogiangri/UN1CA "UN1CA")
+[2](https://github.com/ricci206/Maniac-ROM "Maniac-ROM")
+[3](https://github.com/Ocin4ever/EternityROM/tree/fifteen "EternityROM")
+[4](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen "ExtremeROM")
