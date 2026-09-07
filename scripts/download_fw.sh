@@ -142,20 +142,13 @@ for i in "${FIRMWARES[@]}"; do
         LOG "  - Cleaning download directory..."
         rm -rf "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
-        LOG "- Manually downloading SOURCE (${MODEL}) firmware from Google Drive"
-        ODIN_DIR="$OUT_DIR/odin"
-        mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
-        
-        LOG "  - Cleaning download directory..."
-        rm -rf "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
-
-        LOG "- Downloading via curl (Direct large-file bypass)..."
+        LOG "- Downloading via curl (Direct large-file bypass with redirect support)..."
         FILE_ID="15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat"
         DEST="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
         COOKIES="$(mktemp)"
         
-        # Force download by appending confirm=t and saving cookies
-        curl -sc "$COOKIES" "https://drive.google.com/uc?export=download&confirm=t&id=${FILE_ID}" -o "$DEST" || exit 1
+        # Follow redirects (-L) to hit the actual googleusercontent download target
+        curl -sc "$COOKIES" -L "https://drive.google.com/uc?export=download&confirm=t&id=${FILE_ID}" -o "$DEST" || exit 1
 
         if [ ! -s "$DEST" ]; then
             LOGW "\033[0;31m! curl download produced an empty file!\033[0m"
@@ -178,11 +171,6 @@ for i in "${FIRMWARES[@]}"; do
         LOG "- Extracting $(basename "$ZIP_FILE")..."
         EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -rf \"$ZIP_FILE\"" || exit 1
 
-        VERIFY_ODIN_PACKAGES
-
-        echo -n "MANUAL_GDRIVE_OVERRIDE" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
-
-        LOG_STEP_OUT
     else
         # Original samloader logic for the target firmware
         LATEST_FIRMWARE="$(GET_LATEST_FIRMWARE "$MODEL" "$CSC")"
