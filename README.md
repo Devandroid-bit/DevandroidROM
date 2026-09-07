@@ -175,7 +175,7 @@ Kernel and device-tree sources must always be selected according to the exact de
 
 ## References
 
-[UNICA](https://github.com/salvogiangri/UN1CA)
-[Maniac-ROM](https://github.com/ricci206/Maniac-ROM)
-[EternityROM](https://github.com/Ocin4ever/EternityROM/tree/fifteen)
-[ExtremeROM](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen)
+- **[UNICA](https://github.com/salvogiangri/UN1CA)**
+- **[Maniac-ROM](https://github.com/ricci206/Maniac-ROM)**
+- **[EternityROM](https://github.com/Ocin4ever/EternityROM/tree/fifteen)**
+- **[ExtremeROM](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen)**
