@@ -141,7 +141,7 @@ for i in "${FIRMWARES[@]}"; do
 
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
-        FILE_ID="15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat"
+        FILE_ID="1PKjPM2K7-eoAt5RCPYCcwQjOxPxDDk9J"
         ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
         LOG "- Downloading firmware from Google Drive..."
