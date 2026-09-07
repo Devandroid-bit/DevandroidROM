@@ -1,0 +1,27 @@
+From 084c099bad8b703c54f71ec8058214fb61ebeefe Mon Sep 17 00:00:00 2001
+From: ExtremeXT <75576145+ExtremeXT@users.noreply.github.com>
+Date: Fri, 12 Sep 2025 16:15:16 +0300
+Subject: [PATCH 2/3] Disable Hotspot WPA3 support
+
+Change-Id: Ie1b0dd223026c030a93d00720a8764a07f3d3069
+Signed-off-by: ExtremeXT <75576145+ExtremeXT@users.noreply.github.com>
+---
+ .../samsung/android/server/wifi/ap/SemWifiApServiceImpl.smali   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/smali/com/samsung/android/server/wifi/ap/SemWifiApServiceImpl.smali b/smali/com/samsung/android/server/wifi/ap/SemWifiApServiceImpl.smali
+index 29794a0..8c75e54 100644
+--- a/smali/com/samsung/android/server/wifi/ap/SemWifiApServiceImpl.smali
++++ b/smali/com/samsung/android/server/wifi/ap/SemWifiApServiceImpl.smali
+@@ -8149,7 +8149,7 @@
+ 
+     invoke-static {v0, v1}, Landroid/os/Binder;->restoreCallingIdentity(J)V
+ 
+-    const/4 p0, 0x1
++    const/4 p0, 0x0
+ 
+     return p0
+ .end method
+-- 
+2.51.0
+

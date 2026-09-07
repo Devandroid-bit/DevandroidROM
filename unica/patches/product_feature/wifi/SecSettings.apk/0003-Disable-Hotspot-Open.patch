@@ -1,0 +1,26 @@
+diff -Naur SecSettings.a/res/values/arrays.xml SecSettings.b/res/values/arrays.xml
+--- a/res/values/arrays.xml	2026-01-15 11:13:53.859881293 +0100
++++ b/res/values/arrays.xml	2026-01-15 15:39:39.275643554 +0100
+@@ -3258,12 +3258,10 @@
+         <item>10</item>
+     </string-array>
+     <string-array name="wifi_ap_owe_security_type_entries1">
+-        <item>Open</item>
+         <item>Enhanced Open</item>
+         <item>WPA2-Personal</item>
+     </string-array>
+     <string-array name="wifi_ap_owe_wpa3_security_type_entries">
+-        <item>Open</item>
+         <item>Enhanced Open</item>
+         <item>WPA2-Personal</item>
+         <item>WPA2/WPA3-Personal</item>
+@@ -3274,7 +3272,6 @@
+         <item>@string/wifi_security_wpa2</item>
+     </string-array>
+     <string-array name="wifi_ap_security_type_entries1">
+-        <item>Open</item>
+         <item>WPA2-Personal</item>
+     </string-array>
+     <array name="wifi_ap_top_10_progressbar_color_array">
+
+

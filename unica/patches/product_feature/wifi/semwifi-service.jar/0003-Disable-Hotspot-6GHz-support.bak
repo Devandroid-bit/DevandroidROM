@@ -1,0 +1,36 @@
+From a145605be91b49fa20700f094b158274b4928fce Mon Sep 17 00:00:00 2001
+From: ExtremeXT <75576145+ExtremeXT@users.noreply.github.com>
+Date: Fri, 12 Sep 2025 16:15:40 +0300
+Subject: [PATCH 3/3] Disable Hotspot 6GHz support
+
+Change-Id: Ibc164b0ab63e41a1e6575ffeedb45e57301c3e7b
+Signed-off-by: ExtremeXT <75576145+ExtremeXT@users.noreply.github.com>
+---
+ .../com/samsung/android/server/wifi/SemFrameworkFacade.smali  | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/smali/com/samsung/android/server/wifi/SemFrameworkFacade.smali b/smali/com/samsung/android/server/wifi/SemFrameworkFacade.smali
+index 015eea7..f0fbb41 100644
+--- a/smali/com/samsung/android/server/wifi/SemFrameworkFacade.smali
++++ b/smali/com/samsung/android/server/wifi/SemFrameworkFacade.smali
+@@ -1500,7 +1500,7 @@
+ .method public isSupportMobileAp6G()Z
+     .locals 0
+ 
+-    const/4 p0, 0x1
++    const/4 p0, 0x0
+ 
+     return p0
+ .end method
+@@ -1524,7 +1524,7 @@
+ .method public isSupported6Ghz()Z
+     .locals 0
+ 
+-    const/4 p0, 0x1
++    const/4 p0, 0x0
+ 
+     return p0
+ .end method
+-- 
+2.51.0
+

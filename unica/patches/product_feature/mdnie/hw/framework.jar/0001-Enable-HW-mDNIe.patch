@@ -1,0 +1,111 @@
+From 5d600f3b5c28e9b2cca7a669d11d70b6213b28c1 Mon Sep 17 00:00:00 2001
+From: ExtremeXT <75576145+ExtremeXT@users.noreply.github.com>
+Date: Tue, 16 Sep 2025 22:16:37 +0300
+Subject: [PATCH] Enable HW mDNIe
+
+Change-Id: I7c080dee31b4e15f86e8083184f706339e5b20f7
+Signed-off-by: ExtremeXT <75576145+ExtremeXT@users.noreply.github.com>
+---
+ .../android/view/accessibility/A11yRune.smali | 57 +++++++++++--------
+ 1 file changed, 33 insertions(+), 24 deletions(-)
+
+diff --git a/smali_classes4/android/view/accessibility/A11yRune.smali b/smali_classes4/android/view/accessibility/A11yRune.smali
+index e59783dd..8f3a8d28 100644
+--- a/smali_classes4/android/view/accessibility/A11yRune.smali
++++ b/smali_classes4/android/view/accessibility/A11yRune.smali
+@@ -18,7 +18,7 @@
+ 
+ .field public static final blacklist A11Y_COLOR_BOOL_SUPPORT_DMC_COLORWEAKNESS:Z
+ 
+-.field public static final blacklist A11Y_COLOR_BOOL_SUPPORT_MDNIE_HW:Z = false
++.field public static final blacklist A11Y_COLOR_BOOL_SUPPORT_MDNIE_HW:Z = true
+ 
+ .field public static final blacklist A11Y_COLOR_BOOL_SUPPORT_MDNIE_SW:Z = false
+ 
+@@ -159,51 +159,60 @@
+ 
+     sput v0, Landroid/view/accessibility/A11yRune;->FIRST_API_LEVEL:I
+ 
+-    const/4 v0, 0x1
++    const/4 v1, 0x0
+ 
+-    sput-boolean v0, Landroid/view/accessibility/A11yRune;->A11Y_COLOR_BOOL_SUPPORT_DMC_COLORWEAKNESS:Z
++    sput-boolean v1, Landroid/view/accessibility/A11yRune;->A11Y_COLOR_BOOL_SUPPORT_DMC_COLORWEAKNESS:Z
+ 
+-    const/4 v1, 0x0
++    const/16 v2, 0x23
++
++    const/4 v3, 0x1
+ 
+-    sput-boolean v1, Landroid/view/accessibility/A11yRune;->A11Y_COLOR_BOOL_SUPPORT_COLOR_FILTER_MDNIE_HW:Z
++    if-ge v0, v2, :cond_0
++
++    move v0, v3
++
++    goto :goto_0
++
++    :cond_0
++    move v0, v1
++
++    :goto_0
++    sput-boolean v0, Landroid/view/accessibility/A11yRune;->A11Y_COLOR_BOOL_SUPPORT_COLOR_FILTER_MDNIE_HW:Z
+ 
+     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
+ 
+-    move-result-object v2
++    move-result-object v0
+ 
+-    const-string v3, "SEC_FLOATING_FEATURE_FRAMEWORK_SUPPORT_FOLDABLE_TYPE_FLIP"
++    const-string v2, "SEC_FLOATING_FEATURE_FRAMEWORK_SUPPORT_FOLDABLE_TYPE_FLIP"
+ 
+-    invoke-virtual {v2, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getBoolean(Ljava/lang/String;)Z
++    invoke-virtual {v0, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getBoolean(Ljava/lang/String;)Z
+ 
+-    move-result v2
++    move-result v0
+ 
+-    if-eqz v2, :cond_0
++    if-eqz v0, :cond_1
+ 
+     invoke-static {}, Lcom/samsung/android/feature/SemFloatingFeature;->getInstance()Lcom/samsung/android/feature/SemFloatingFeature;
+ 
+-    move-result-object v2
++    move-result-object v0
+ 
+-    const-string v3, "SEC_FLOATING_FEATURE_LOCKSCREEN_CONFIG_SUBDISPLAY_POLICY"
++    const-string v2, "SEC_FLOATING_FEATURE_LOCKSCREEN_CONFIG_SUBDISPLAY_POLICY"
+ 
+-    invoke-virtual {v2, v3}, Lcom/samsung/android/feature/SemFloatingFeature;->getString(Ljava/lang/String;)Ljava/lang/String;
++    invoke-virtual {v0, v2}, Lcom/samsung/android/feature/SemFloatingFeature;->getString(Ljava/lang/String;)Ljava/lang/String;
+ 
+-    move-result-object v2
++    move-result-object v0
+ 
+-    const-string v3, "LARGESCREEN"
++    const-string v2, "LARGESCREEN"
+ 
+-    invoke-virtual {v2, v3}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
++    invoke-virtual {v0, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+ 
+-    move-result v2
++    move-result v0
+ 
+-    if-eqz v2, :cond_0
++    if-eqz v0, :cond_1
+ 
+-    goto :goto_0
++    move v1, v3
+ 
+-    :cond_0
+-    move v0, v1
+-
+-    :goto_0
+-    sput-boolean v0, Landroid/view/accessibility/A11yRune;->A11Y_COMMON_BOOL_SUPPORT_LARGE_COVER_SCREEN_FLIP:Z
++    :cond_1
++    sput-boolean v1, Landroid/view/accessibility/A11yRune;->A11Y_COMMON_BOOL_SUPPORT_LARGE_COVER_SCREEN_FLIP:Z
+ 
+     const-string v0, "content://com.samsung.accessibility.provider/a11ysettings"
+ 
+-- 
+2.51.0
+
