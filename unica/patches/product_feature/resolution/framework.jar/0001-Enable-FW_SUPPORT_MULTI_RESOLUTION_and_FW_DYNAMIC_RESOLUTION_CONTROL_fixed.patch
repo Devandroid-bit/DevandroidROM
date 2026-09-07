@@ -34,14 +34,14 @@ FW_MULTI_RESOLUTION_POLICY, FW_DYNAMIC_RESOLUTION_CONTROL) in a
 single hunk against the pristine file, plus the VRR resolution-policy
 follow-on hunk, so there is no ordering hazard.
 ---
- smali_classes6/com/samsung/android/rune/CoreRune.smali | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ smali_classes6/com/samsung/android/rune/CoreRune.smali | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/smali_classes6/com/samsung/android/rune/CoreRune.smali b/smali_classes6/com/samsung/android/rune/CoreRune.smali
-index 3619eba0..fixed0001 100644
+index 3619eba0..a1b2c3d4 100644
 --- a/smali_classes6/com/samsung/android/rune/CoreRune.smali
 +++ b/smali_classes6/com/samsung/android/rune/CoreRune.smali
-@@ -2835,9 +2835,9 @@
+@@ -2835,11 +2835,11 @@
      :goto_e
      sput-boolean v2, Lcom/samsung/android/rune/CoreRune;->FW_TSP_DEADZONE_LARGE_FLIP_COVER:Z
  
