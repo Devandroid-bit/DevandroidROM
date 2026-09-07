@@ -155,58 +155,91 @@ if [[ "$SOURCE_COMMON_CONFIG_MDNIE_MODE" != "$TARGET_COMMON_CONFIG_MDNIE_MODE" ]
 fi
 
 # SEC_PRODUCT_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL
-if $TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
-    if [[ "$(GET_FINGERPRINT_SENSOR_TYPE "$TARGET_FINGERPRINT_CONFIG_SENSOR")" == "optical" ]]; then
-        ABORT "TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL is not supported on targets with an optical fingerprint sensor"
+if ! $SOURCE_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
+    if $TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
+        if [[ "$(GET_FINGERPRINT_SENSOR_TYPE "$TARGET_FINGERPRINT_CONFIG_SENSOR")" == "optical" ]]; then
+            ABORT "TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL is not supported on targets with an optical fingerprint sensor"
+        fi
+
+        SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL" "WQHD,FHD,HD"
+
+        ADD_TO_WORK_DIR "$([[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
+            "system" "system/bin/bootanimation" 0 2000 755 "u:object_r:bootanim_exec:s0"
+        ADD_TO_WORK_DIR "$([[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
+            "system" "system/bin/surfaceflinger" 0 2000 755 "u:object_r:surfaceflinger_exec:s0"
+        # Ensure IQtiComposer support (pre-API 36)
+        # Check unica/patches/legacy/customize.sh for more info.
+        if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
+            if [[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && \
+                    ! grep -q -r "IQtiComposer" "$WORK_DIR/vendor/etc/vintf"; then
+                # [b.lt #0x72b2b0] -> [nop]
+                HEX_PATCH "$WORK_DIR/system/system/bin/surfaceflinger" "9f8a00712b03005400068052" "9f8a00711f2003d500068052"
+            fi
+        fi
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_error.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_low.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_protection.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_temperature_error.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_temperature_limit.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_water_usb.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/incomplete_connect.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/lcd_density.txt" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_0_100.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_1_100.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_2_100.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_1.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_2.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_3.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_4.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_1.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_2.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_3.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_4.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_1.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_2.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_3.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_4.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/slow_charging_usb.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/temperature_limit_usb.spi" 0 0 644 "u:object_r:system_file:s0"
+        ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/water_protection_usb.spi" 0 0 644 "u:object_r:system_file:s0"
+
+        if [ "$TARGET_PLATFORM_SDK_VERSION" -ge "36" ]; then
+            APPLY_PATCH "system" "system/framework/framework.jar" \
+                "$MODPATH/resolution/framework.jar/0001-Enable-FW_SUPPORT_MULTI_RESOLUTION.patch"
+        else
+            APPLY_PATCH "system" "system/framework/framework.jar" \
+                "$MODPATH/resolution/framework.jar/0001-Enable-FW_DYNAMIC_RESOLUTION_CONTROL.patch"
+        fi
+        APPLY_PATCH "system" "system/framework/gamemanager.jar" \
+            "$MODPATH/resolution/gamemanager.jar/0001-Enable-dynamic-resolution-control.patch"
+        APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+            "$MODPATH/resolution/SecSettings.apk/0001-Enable-dynamic-resolution-control.patch"
+        SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+            "smali_classes2/com/android/settings/Utils\$\$ExternalSyntheticLambda2.smali" "remove"
+        EVAL "sed -i \"s/^\.implements.*/.implements Landroidx\/core\/view\/OnApplyWindowInsetsListener;/g\" \"$APKTOOL_DIR/system/priv-app/SecSettings/SecSettings.apk/smali_classes2/com/android/settings/Utils\\\$\\\$ExternalSyntheticLambda3.smali\""
+        SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+            "smali_classes2/com/android/settings/applications/manageapplications/ManageApplications\$ApplicationsAdapter\$\$ExternalSyntheticLambda3.smali" "remove"
+        SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+            "smali_classes2/com/android/settings/applications/manageapplications/ManageApplications\$ApplicationsAdapter\$\$ExternalSyntheticLambda7.smali" "remove"
+        SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+            "smali_classes2/com/android/settings/applications/manageapplications/ManageApplications\$ApplicationsAdapter\$\$ExternalSyntheticLambda9.smali" "remove"
+        SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+            "smali_classes2/com/android/settings/applications/manageapplications/ManageApplications\$ApplicationsAdapter\$\$ExternalSyntheticOutline0.smali" "remove"
+        if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
+            APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+                "$MODPATH/resolution/SecSettings.apk/0002-Backport-legacy-DYN_RESOLUTION_CONTROL-code.patch"
+            EVAL "sed -i \"/static fields/,+3d\" \"$APKTOOL_DIR/system/priv-app/SecSettings/SecSettings.apk/smali_classes4/com/samsung/android/settings/display/ScreenResolutionFragment.smali\""
+            SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
+                "smali_classes4/com/samsung/android/settings/display/controller/ScreenResolutionPreferenceController\$2.smali" "remove"
+        fi
+        APPLY_PATCH "system_ext" "priv-app/SystemUI/SystemUI.apk" \
+            "$MODPATH/resolution/SystemUI.apk/0001-Enable-dynamic-resolution-control.patch"
     fi
-
-    SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL" "WQHD,FHD,HD"
-
-    ADD_TO_WORK_DIR "$([[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
-        "system" "system/bin/bootanimation" 0 2000 755 "u:object_r:bootanim_exec:s0"
-    ADD_TO_WORK_DIR "$([[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
-        "system" "system/bin/surfaceflinger" 0 2000 755 "u:object_r:surfaceflinger_exec:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_error.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_low.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_protection.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_temperature_error.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_temperature_limit.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/battery_water_usb.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/incomplete_connect.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/lcd_density.txt" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_0_100.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_1_100.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_2_100.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_1.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_2.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_3.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_0_4.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_1.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_2.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_3.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_1_4.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_1.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_2.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_3.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/new_vi_level_2_4.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/slow_charging_usb.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/temperature_limit_usb.spi" 0 0 644 "u:object_r:system_file:s0"
-    ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/water_protection_usb.spi" 0 0 644 "u:object_r:system_file:s0"
-
-    # APPLY_PATCH "system" "system/framework/framework.jar" \
-    #     "$MODPATH/resolution/framework.jar/0001-Enable-DYN_RESOLUTION_CONTROL-and-VRR-flags.patch"
-    # if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
-    #     APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
-    #         "$MODPATH/resolution/SecSettings.apk/0002-Backport-legacy-DYN_RESOLUTION_CONTROL-code.patch"
-    # fi
 else
-    SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL" --delete
-    APPLY_PATCH "system" "system/framework/framework.jar" \
-        "$MODPATH/resolution/framework.jar/0001-Disable-MULTI_RESOLUTION-flags.patch"
-    APPLY_PATCH "system" "system/framework/gamemanager.jar" \
-        "$MODPATH/resolution/gamemanager.jar/0001-Disable-MULTI_RESOLUTION_SUPPORTED.patch"
-    APPLY_PATCH "system_ext" "priv-app/SystemUI/SystemUI.apk" \
-        "$MODPATH/resolution/SystemUI.apk/0001-Disable-multi-resolution-edge-lighting.patch"
+    if ! $TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
+        # TODO handle this condition
+        LOG_MISSING_PATCHES "SOURCE_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL" "TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL"
+    fi
 fi
 
 # SEC_PRODUCT_FEATURE_COMMON_SUPPORT_EMBEDDED_SIM
@@ -270,6 +303,14 @@ if [[ "$SOURCE_FINGERPRINT_CONFIG_SENSOR" != "$TARGET_FINGERPRINT_CONFIG_SENSOR"
 
                 if [[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]]; then
                     ADD_TO_WORK_DIR "r9qxxx" "system" "system/bin/surfaceflinger" 0 2000 755 "u:object_r:surfaceflinger_exec:s0"
+                    # Ensure IQtiComposer support (pre-API 36)
+                    # Check unica/patches/legacy/customize.sh for more info.
+                    if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
+                        if ! grep -q -r "IQtiComposer" "$WORK_DIR/vendor/etc/vintf"; then
+                            # [b.lt #0x72914c] -> [nop]
+                            HEX_PATCH "$WORK_DIR/system/system/bin/surfaceflinger" "9f8a00712b03005400068052" "9f8a00711f2003d500068052"
+                        fi
+                    fi
                     ADD_TO_WORK_DIR "r9qxxx" "system" "system/lib/libgui.so" 0 0 644 "u:object_r:system_lib_file:s0"
                     ADD_TO_WORK_DIR "r9qxxx" "system" "system/lib/libui.so" 0 0 644 "u:object_r:system_lib_file:s0"
                     ADD_TO_WORK_DIR "r9qxxx" "system" "system/lib64/libgui.so" 0 0 644 "u:object_r:system_lib_file:s0"
@@ -421,13 +462,8 @@ if [[ "$SOURCE_LCD_CONFIG_SEAMLESS_BRT" != "$TARGET_LCD_CONFIG_SEAMLESS_BRT" ]] 
         [[ "$SOURCE_LCD_CONFIG_SEAMLESS_LUX" != "$TARGET_LCD_CONFIG_SEAMLESS_LUX" ]]; then
     if [[ "$SOURCE_LCD_CONFIG_SEAMLESS_BRT" != "none" ]] && [[ "$SOURCE_LCD_CONFIG_SEAMLESS_LUX" != "none" ]] && \
             [[ "$TARGET_LCD_CONFIG_SEAMLESS_BRT" == "none" ]] && [[ "$TARGET_LCD_CONFIG_SEAMLESS_LUX" == "none" ]]; then
-        if [[ "$SOURCE_LCD_CONFIG_SEAMLESS_BRT" == "35" ]] && [[ "$SOURCE_LCD_CONFIG_SEAMLESS_LUX" == "40" ]]; then
-            APPLY_PATCH "system" "system/framework/framework.jar" \
-                "$MODPATH/hfr/framework.jar/0001-Remove-brightness-threshold-values-exynos.patch"
-        else
-            APPLY_PATCH "system" "system/framework/framework.jar" \
-                "$MODPATH/hfr/framework.jar/0001-Remove-brightness-threshold-values.patch"
-        fi
+        APPLY_PATCH "system" "system/framework/framework.jar" \
+            "$MODPATH/hfr/framework.jar/0001-Remove-brightness-threshold-values.patch"
     elif [[ "$SOURCE_LCD_CONFIG_SEAMLESS_BRT" != "none" ]] && [[ "$SOURCE_LCD_CONFIG_SEAMLESS_LUX" != "none" ]] && \
             [[ "$TARGET_LCD_CONFIG_SEAMLESS_BRT" != "none" ]] && [[ "$TARGET_LCD_CONFIG_SEAMLESS_LUX" != "none" ]]; then
         SMALI_PATCH "system" "system/framework/framework.jar" \
@@ -785,8 +821,6 @@ if $SOURCE_WLAN_SUPPORT_80211AX; then
             ABORT "TARGET_WLAN_SUPPORT_80211AX is required by TARGET_WLAN_SUPPORT_80211AX_6GHZ"
         fi
         if ! $SOURCE_WLAN_SUPPORT_80211AX_6GHZ; then
-            APPLY_PATCH "system" "system/framework/semwifi-service.jar" \
-                "$MODPATH/wifi/80211ax/semwifi-service.jar/0001-Disable-80211AX-support.patch"
             APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
                 "$MODPATH/wifi/80211ax/SecSettings.apk/0001-Disable-80211AX-support.patch"
             APPLY_PATCH "system_ext" "priv-app/SystemUI/SystemUI.apk" \
@@ -905,6 +939,19 @@ elif $SOURCE_WLAN_SUPPORT_MIMO && ! $TARGET_WLAN_SUPPORT_MIMO; then
         "smali/com/samsung/android/server/wifi/SemWifiServiceImpl.smali" "return" \
         "getNumOfWifiAnt()I" \
         "1"
+fi
+
+# SEC_PRODUCT_FEATURE_WLAN_SUPPORT_MOBILEAP_11AX
+if $SOURCE_WLAN_SUPPORT_MOBILEAP_11AX; then
+    if ! $TARGET_WLAN_SUPPORT_MOBILEAP_11AX; then
+        APPLY_PATCH "system" "system/framework/semwifi-service.jar" \
+            "$MODPATH/wifi/80211ax/semwifi-service.jar/0001-Disable-MOBILEAP_11AX-support.patch"
+    fi
+else
+    if $TARGET_WLAN_SUPPORT_MOBILEAP_11AX; then
+        # TODO handle this condition
+        LOG_MISSING_PATCHES "SOURCE_WLAN_SUPPORT_MOBILEAP_11AX" "TARGET_WLAN_SUPPORT_MOBILEAP_11AX"
+    fi
 fi
 
 # SEC_PRODUCT_FEATURE_WLAN_SUPPORT_MOBILEAP_5G_BASEDON_COUNTRY
