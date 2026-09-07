@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Salvo Giangreco <giangrecosalvo9@gmail.com>
+Date: Wed, 17 Dec 2025 15:39:51 +0100
+Subject: [PATCH] Enable FW_SUPPORT_MULTI_RESOLUTION + FW_DYNAMIC_RESOLUTION_CONTROL (merged, conflict-free)
+
+This replaces the two separate patches:
+  - 0001-Enable-FW_SUPPORT_MULTI_RESOLUTION.patch
+  - 0001-Enable-FW_DYNAMIC_RESOLUTION_CONTROL.patch
+
+Both patches were generated independently against the SAME pristine
+CoreRune.smali (index 3619eba0) and their hunks overlap:
+
+  - FW_SUPPORT_MULTI_RESOLUTION's hunk (@@ -2835,9 +2835,9 @@) rewrites
+    the FW_MULTI_RESOLUTION_POLICY line (v5 -> v4).
+  - FW_DYNAMIC_RESOLUTION_CONTROL's hunk (@@ -2839,7 +2839,7 @@) uses
+    that SAME FW_MULTI_RESOLUTION_POLICY line as unchanged CONTEXT,
+    still expecting it to read v5.
+
+Applied back-to-back, whichever of the two patches lands second no
+longer finds the context it expects (v4 where it wants v5, or vice
+versa for FW_DYNAMIC_RESOLUTION_CONTROL depending on order), so the
+second patch either fails outright or is applied with fuzz against
+the wrong assumption. On devices that fall into the
+"SOURCE_HAS_QHD_DISPLAY=false / TARGET_HAS_QHD_DISPLAY=true" branch
+(native-QHD "Plus" panels), FW_DYNAMIC_RESOLUTION_CONTROL is the flag
+that actually lets WindowManager honor a runtime resolution change;
+FW_SUPPORT_MULTI_RESOLUTION only controls whether the Settings UI
+shows the option. If FW_DYNAMIC_RESOLUTION_CONTROL doesn't end up
+set correctly, the picker shows FHD/HD but selecting them has no
+effect - the display stays at native QHD.
+
+This merged patch sets all three flags (FW_SUPPORT_MULTI_RESOLUTION,
+FW_MULTI_RESOLUTION_POLICY, FW_DYNAMIC_RESOLUTION_CONTROL) in a
+single hunk against the pristine file, plus the VRR resolution-policy
+follow-on hunk, so there is no ordering hazard.
+---
+ smali_classes6/com/samsung/android/rune/CoreRune.smali | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/smali_classes6/com/samsung/android/rune/CoreRune.smali b/smali_classes6/com/samsung/android/rune/CoreRune.smali
+index 3619eba0..fixed0001 100644
+--- a/smali_classes6/com/samsung/android/rune/CoreRune.smali
++++ b/smali_classes6/com/samsung/android/rune/CoreRune.smali
+@@ -2835,9 +2835,9 @@
+     :goto_e
+     sput-boolean v2, Lcom/samsung/android/rune/CoreRune;->FW_TSP_DEADZONE_LARGE_FLIP_COVER:Z
+ 
+-    sput-boolean v5, Lcom/samsung/android/rune/CoreRune;->FW_SUPPORT_MULTI_RESOLUTION:Z
++    sput-boolean v4, Lcom/samsung/android/rune/CoreRune;->FW_SUPPORT_MULTI_RESOLUTION:Z
+ 
+-    sput-boolean v5, Lcom/samsung/android/rune/CoreRune;->FW_MULTI_RESOLUTION_POLICY:Z
++    sput-boolean v4, Lcom/samsung/android/rune/CoreRune;->FW_MULTI_RESOLUTION_POLICY:Z
+ 
+-    sput-boolean v5, Lcom/samsung/android/rune/CoreRune;->FW_DYNAMIC_RESOLUTION_CONTROL:Z
++    sput-boolean v4, Lcom/samsung/android/rune/CoreRune;->FW_DYNAMIC_RESOLUTION_CONTROL:Z
+ 
+     const-string v2, "2"
+ 
+@@ -2915,9 +2915,9 @@
+ 
+     sput-boolean v3, Lcom/samsung/android/rune/CoreRune;->FW_VRR_REFRESH_RATE_MODE:Z
+ 
+-    sput-boolean v5, Lcom/samsung/android/rune/CoreRune;->FW_VRR_RESOLUTION_POLICY:Z
++    sput-boolean v3, Lcom/samsung/android/rune/CoreRune;->FW_VRR_RESOLUTION_POLICY:Z
+ 
+-    sput-boolean v5, Lcom/samsung/android/rune/CoreRune;->FW_VRR_RESOLUTION_POLICY_FOR_SHELL_TRANSITION:Z
++    sput-boolean v3, Lcom/samsung/android/rune/CoreRune;->FW_VRR_RESOLUTION_POLICY_FOR_SHELL_TRANSITION:Z
+ 
+     sput-boolean v3, Lcom/samsung/android/rune/CoreRune;->FW_VRR_FIXED_REFRESH_RATE_PACKAGE:Z
+ 
+-- 
+2.52.0
