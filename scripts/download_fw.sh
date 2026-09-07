@@ -9,11 +9,11 @@
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
 # [
@@ -57,6 +57,7 @@ PREPARE_SCRIPT()
     if ! $IGNORE_SOURCE; then
         _CHECK_NON_EMPTY_PARAM "SOURCE_FIRMWARE" "$SOURCE_FIRMWARE" || exit 1
         FIRMWARES+=("$SOURCE_FIRMWARE")
+
         IFS=':' read -r -a SOURCE_EXTRA_FIRMWARES <<< "$SOURCE_EXTRA_FIRMWARES"
         if [ "${#SOURCE_EXTRA_FIRMWARES[@]}" -ge 1 ]; then
             FIRMWARES+=("${SOURCE_EXTRA_FIRMWARES[@]}")
@@ -66,6 +67,7 @@ PREPARE_SCRIPT()
     if ! $IGNORE_TARGET; then
         _CHECK_NON_EMPTY_PARAM "TARGET_FIRMWARE" "$TARGET_FIRMWARE" || exit 1
         FIRMWARES+=("$TARGET_FIRMWARE")
+
         IFS=':' read -r -a TARGET_EXTRA_FIRMWARES <<< "$TARGET_EXTRA_FIRMWARES"
         if [ "${#TARGET_EXTRA_FIRMWARES[@]}" -ge 1 ]; then
             FIRMWARES+=("${TARGET_EXTRA_FIRMWARES[@]}")
@@ -131,45 +133,67 @@ for i in "${FIRMWARES[@]}"; do
     if [[ "$i" == "$SOURCE_FIRMWARE" ]]; then
         LOG_STEP_IN "- Manually downloading SOURCE ($MODEL) firmware from Google Drive"
 
-        LOG "- Cleaning download directory..."
-        [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
-        mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
-
-        LOG "- Manually downloading SOURCE (${MODEL}) firmware from Google Drive"
         ODIN_DIR="$OUT_DIR/odin"
+
+        LOG "- Cleaning download directory..."
+        [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && \
+            rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
+
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
-        
-        LOG "  - Cleaning download directory..."
-        rm -rf "$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
-        LOG "- Downloading via curl (Direct large-file bypass with redirect support)..."
         FILE_ID="15MtXzhUGmmUFNoV5Al5D7vi1hyj-kBat"
-        DEST="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
-        COOKIES="$(mktemp)"
-        
-        # Follow redirects (-L) to hit the actual googleusercontent download target
-        curl -sc "$COOKIES" -L "https://drive.google.com/uc?export=download&confirm=t&id=${FILE_ID}" -o "$DEST" || exit 1
+        ZIP_FILE="$ODIN_DIR/${MODEL}_${CSC}/firmware.zip"
 
-        if [ ! -s "$DEST" ]; then
-            LOGW "\033[0;31m! curl download produced an empty file!\033[0m"
-            rm -f "$COOKIES"
+        LOG "- Downloading firmware from Google Drive..."
+
+        DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=${FILE_ID}&export=download&confirm=t"
+
+        curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-delay 3 \
+            --retry-all-errors \
+            --output "$ZIP_FILE" \
+            "$DOWNLOAD_URL" || {
+                LOGW "\033[0;31m! Failed to download firmware from Google Drive.\033[0m"
+                rm -f "$ZIP_FILE"
+                exit 1
+            }
+
+        if [ ! -s "$ZIP_FILE" ]; then
+            LOGW "\033[0;31m! Download produced an empty file!\033[0m"
+            rm -f "$ZIP_FILE"
             exit 1
         fi
 
-        # Sanity check: verify size
-        FILESIZE="$(stat -c%s "$DEST" 2>/dev/null || stat -f%z "$DEST")"
-        if [ "$FILESIZE" -lt 1000000 ]; then
-            LOGW "\033[0;31m! Downloaded file is only ${FILESIZE} bytes - still hitting a warning page.\033[0m"
-            cat "$DEST"
-            rm -f "$COOKIES"
+        FILESIZE="$(stat -c%s "$ZIP_FILE" 2>/dev/null || stat -f%z "$ZIP_FILE")"
+
+        LOG "- Downloaded file size: ${FILESIZE} bytes"
+
+        # Detect Google Drive HTML/error pages.
+        if head -c 512 "$ZIP_FILE" | grep -qiE '<!DOCTYPE html|<html'; then
+            LOGW "\033[0;31m! Google Drive returned an HTML page instead of the firmware file.\033[0m"
+            rm -f "$ZIP_FILE"
             exit 1
         fi
 
-        rm -f "$COOKIES"
-        ZIP_FILE="$DEST"
+        # Verify that the downloaded file is a valid ZIP archive.
+        if ! unzip -tq "$ZIP_FILE" >/dev/null 2>&1; then
+            LOGW "\033[0;31m! Downloaded file is not a valid ZIP archive.\033[0m"
+            rm -f "$ZIP_FILE"
+            exit 1
+        fi
+
+        LOG "- Firmware successfully downloaded."
 
         LOG "- Extracting $(basename "$ZIP_FILE")..."
-        EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -rf \"$ZIP_FILE\"" || exit 1
+
+        EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -f \"$ZIP_FILE\"" || exit 1
+
+        LOG "- Firmware extraction completed successfully."
+
+        LOG_STEP_OUT
 
     else
         # Original samloader logic for the target firmware
@@ -180,53 +204,77 @@ for i in "${FIRMWARES[@]}"; do
         fi
 
         LOG_STEP_IN "- Processing TARGET $MODEL firmware with $CSC CSC"
-        LOG "- Downloaded firmware: $(cat "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" 2> /dev/null)"
-        LOG "- Extracted firmware: $(cat "$FW_DIR/${MODEL}_${CSC}/.extracted" 2> /dev/null)"
+        LOG "- Downloaded firmware: $(cat "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" 2>/dev/null)"
+        LOG "- Extracted firmware: $(cat "$FW_DIR/${MODEL}_${CSC}/.extracted" 2>/dev/null)"
         LOG "- Latest available firmware: $LATEST_FIRMWARE"
 
         LOG_STEP_IN
 
         if ! $FORCE; then
             if [ -f "$FW_DIR/${MODEL}_${CSC}/.extracted" ]; then
-                if COMPARE_SEC_BUILD_VERSION "$(cat "$FW_DIR/${MODEL}_${CSC}/.extracted")" "$LATEST_FIRMWARE"; then
+                if COMPARE_SEC_BUILD_VERSION \
+                    "$(cat "$FW_DIR/${MODEL}_${CSC}/.extracted")" \
+                    "$LATEST_FIRMWARE"; then
                     LOG "\033[0;33m! This firmware has already been extracted, skipping\033[0m"
-                    LOG_STEP_OUT; LOG_STEP_OUT
+                    LOG_STEP_OUT
+                    LOG_STEP_OUT
                     continue
                 fi
             fi
 
             if [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ]; then
-                if ! COMPARE_SEC_BUILD_VERSION "$(cat "$ODIN_DIR/${MODEL}_${CSC}/.downloaded")" "$LATEST_FIRMWARE"; then
+                if ! COMPARE_SEC_BUILD_VERSION \
+                    "$(cat "$ODIN_DIR/${MODEL}_${CSC}/.downloaded")" \
+                    "$LATEST_FIRMWARE"; then
                     LOG "\033[0;33m! A newer firmware is available for download, use --force flag if you want to overwrite it\033[0m"
                 else
                     LOG "\033[0;33m! This firmware has already been downloaded\033[0m"
                 fi
-                LOG_STEP_OUT; LOG_STEP_OUT
+
+                LOG_STEP_OUT
+                LOG_STEP_OUT
                 continue
             fi
         fi
 
         LOG "- Downloading firmware..."
-        [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
+
+        [ -f "$ODIN_DIR/${MODEL}_${CSC}/.downloaded" ] && \
+            rm -rf "$ODIN_DIR/${MODEL}_${CSC}"
+
         mkdir -p "$ODIN_DIR/${MODEL}_${CSC}"
 
         COUNT=1
+
         while true; do
             (
-            cd "$OUT_DIR"
-            STR=""
-            [ $MODEL == "SM-S731B" ] && STR=" -v S731BXXU1AYH9/S731BOXM1AYH9/S731BXXU1AYH9/S731BXXU1AYH9"
-            samloader -m "$MODEL" -r "$CSC" -i "$IMEI" -s "$SERIAL_NO" download$STR -O "$ODIN_DIR/${MODEL}_${CSC}" || exit 1
+                cd "$OUT_DIR"
+
+                STR=""
+
+                [ "$MODEL" == "SM-S731B" ] && \
+                    STR=" -v S731BXXU1AYH9/S731BOXM1AYH9/S731BXXU1AYH9/S731BXXU1AYH9"
+
+                samloader \
+                    -m "$MODEL" \
+                    -r "$CSC" \
+                    -i "$IMEI" \
+                    -s "$SERIAL_NO" \
+                    download$STR \
+                    -O "$ODIN_DIR/${MODEL}_${CSC}" || exit 1
             )
 
-            ZIP_FILE="$(find "$ODIN_DIR/${MODEL}_${CSC}" -name "*.zip" | sort -r | head -n 1)"
+            ZIP_FILE="$(find "$ODIN_DIR/${MODEL}_${CSC}" \
+                -name "*.zip" | sort -r | head -n 1)"
+
             if [ ! "$ZIP_FILE" ] || [ ! -f "$ZIP_FILE" ]; then
-                if [ $COUNT -gt 10 ]; then
+                if [ "$COUNT" -gt 10 ]; then
                     LOGW "\033[0;31m! Download failed, check your network connection or device IMEI!\033[0m"
                     exit 1
                 fi
 
                 LOGW "\033[0;31m! [Attempt: $COUNT] Download failed, retrying in 5 seconds...\033[0m"
+
                 sleep 5
                 ((COUNT++))
             else
@@ -235,13 +283,15 @@ for i in "${FIRMWARES[@]}"; do
         done
 
         LOG "- Extracting $(basename "$ZIP_FILE")..."
+
         EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -rf \"$ZIP_FILE\"" || exit 1
 
         VERIFY_ODIN_PACKAGES
 
         echo -n "$LATEST_FIRMWARE" > "$ODIN_DIR/${MODEL}_${CSC}/.downloaded"
 
-        LOG_STEP_OUT; LOG_STEP_OUT
+        LOG_STEP_OUT
+        LOG_STEP_OUT
     fi
 done
 
