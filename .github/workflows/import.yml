@@ -33,7 +33,7 @@ jobs:
           git clone \
             --depth=1 \
             --branch sixteen \
-            https://github.com/ricci206/Maniac-ROM.git \
+            https://github.com/salvogiangri/UN1CA.git \
             source-repo
 
       - name: Import product_feature
@@ -83,7 +83,7 @@ jobs:
       - name: Commit changes
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git commit -m "prebuilts: import product_feature (Credits: @ricci206)"
+          git commit -m "prebuilts: import product_feature (Credits: @salvogiangri)"
 
       - name: Rebase onto latest sixteen
         if: steps.changes.outputs.changed == 'true'
