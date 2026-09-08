@@ -1,14 +1,15 @@
 LOG_STEP_IN "- Updating Vendor HALs"
 
-# Keep SNAP and SysInput HAL stacks.
-# The previous removal logic was designed for the S24 FE base.
-# SNAP and SysInput are retained for the Galaxy S22-based port.
+# Keep SNAP HALs for the Galaxy S22-based port.
+# Remove the legacy SysInput stack and incompatible vendor HALs.
 
 BLOBS_LIST="
 bin/hw/android.hardware.health@2.1-service-samsung
+bin/hw/vendor.samsung.hardware.sysinput@1.2-service
 bin/hw/vendor.samsung.hardware.vibrator@2.2-service
 etc/audio_policy_configuration_sec.xml
 etc/init/android.hardware.health@2.1-service-samsung.rc
+etc/init/vendor.samsung.hardware.sysinput@1.2-service.rc
 etc/init/vendor.samsung.hardware.vibrator@2.2-service.rc
 etc/vintf/manifest/android.hardware.health@2.1-samsung.xml
 lib/android.hardware.health@2.1.so
@@ -24,12 +25,41 @@ lib64/vendor.samsung.hardware.vibrator@2.1.so
 lib64/vendor.samsung.hardware.vibrator@2.2.so
 "
 
-for blob in $BLOBS_LIST; do
+for blob in $BLOBS_LIST
+do
     DELETE_FROM_WORK_DIR "vendor" "$blob"
 done
 
 LOG_STEP_OUT
 
+
+LOG_STEP_IN "- Removing RenderScript"
+
+BLOBS_LIST="
+bin/bcc_mali
+lib/libmalicore.bc
+lib/libclcore.bc
+lib/libclcore_neon.bc
+lib/libRSDriverArm.so
+lib64/libLLVM_android_mali.so
+lib64/libbcc_mali.so
+lib64/libbccArm.so
+lib64/libclcore.bc
+lib64/libmalicore.bc
+lib64/libRSDriverArm.so
+"
+
+for blob in $BLOBS_LIST
+do
+    DELETE_FROM_WORK_DIR "vendor" "$blob"
+done
+
+LOG_STEP_OUT
+
+LOG "- Fixing SNAP AIDL SELinux rule"
+
+sed -i "s/(allow snap_hidl hal_snap_service (service_manager (find)))/(allow snap_hidl hal_snap_service (service_manager (add find)))/" \
+    "$WORK_DIR/system/system/etc/selinux/plat_sepolicy.cil"
 
 LOG_STEP_IN "- Removing RenderScript"
 
