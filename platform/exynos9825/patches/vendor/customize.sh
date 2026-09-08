@@ -1,42 +1,38 @@
 LOG_STEP_IN "- Updating Vendor HALs"
+
+# Keep SNAP and SysInput HAL stacks.
+# The previous removal logic was designed for the S24 FE base.
+# SNAP and SysInput are retained for the Galaxy S22-based port.
+
 BLOBS_LIST="
 bin/hw/android.hardware.health@2.1-service-samsung
-bin/hw/vendor.samsung.hardware.snap@1.2-service
-bin/hw/vendor.samsung.hardware.sysinput@1.2-service
 bin/hw/vendor.samsung.hardware.vibrator@2.2-service
 etc/audio_policy_configuration_sec.xml
 etc/init/android.hardware.health@2.1-service-samsung.rc
-etc/init/vendor.samsung.hardware.snap-1.2-lazy-service.rc
-etc/init/vendor.samsung.hardware.sysinput@1.2-service.rc
 etc/init/vendor.samsung.hardware.vibrator@2.2-service.rc
 etc/vintf/manifest/android.hardware.health@2.1-samsung.xml
 lib/android.hardware.health@2.1.so
 lib/hw/android.hardware.graphics.mapper@2.0-impl.so
-lib/hw/vendor.samsung.hardware.snap@1.2-impl.so
-lib/vendor.samsung.hardware.snap@1.0.so
-lib/vendor.samsung.hardware.snap@1.1.so
-lib/vendor.samsung.hardware.snap@1.2.so
 lib64/android.hardware.health@2.1.so
 lib64/android.hardware.vibrator@1.0.so
 lib64/android.hardware.vibrator@1.1.so
 lib64/android.hardware.vibrator@1.2.so
 lib64/android.hardware.vibrator@1.3.so
 lib64/hw/android.hardware.graphics.mapper@2.0-impl.so
-lib64/hw/vendor.samsung.hardware.snap@1.2-impl.so
-lib64/vendor.samsung.hardware.snap@1.0.so
-lib64/vendor.samsung.hardware.snap@1.1.so
-lib64/vendor.samsung.hardware.snap@1.2.so
 lib64/vendor.samsung.hardware.vibrator@2.0.so
 lib64/vendor.samsung.hardware.vibrator@2.1.so
 lib64/vendor.samsung.hardware.vibrator@2.2.so
 "
-for blob in $BLOBS_LIST
-do
+
+for blob in $BLOBS_LIST; do
     DELETE_FROM_WORK_DIR "vendor" "$blob"
 done
+
 LOG_STEP_OUT
 
+
 LOG_STEP_IN "- Removing RenderScript"
+
 BLOBS_LIST="
 bin/bcc_mali
 lib/libmalicore.bc
@@ -50,15 +46,12 @@ lib64/libclcore.bc
 lib64/libmalicore.bc
 lib64/libRSDriverArm.so
 "
-for blob in $BLOBS_LIST
-do
+
+for blob in $BLOBS_LIST; do
     DELETE_FROM_WORK_DIR "vendor" "$blob"
 done
+
 LOG_STEP_OUT
-
-LOG "- Fixing SNAP AIDL SELinux rule"
-sed -i "s/(allow snap_hidl hal_snap_service (service_manager (find)))/(allow snap_hidl hal_snap_service (service_manager (add find)))/g" "$WORK_DIR/vendor/etc/selinux/vendor_sepolicy.cil"
-
 LOG "- Fixing JSQZ node permission"
 echo "/dev/jsqz                 0660   mediacodec     camera" >> $WORK_DIR/vendor/ueventd.rc
 
