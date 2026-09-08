@@ -30,6 +30,7 @@ lib64/vendor.samsung.hardware.vibrator@2.0.so
 lib64/vendor.samsung.hardware.vibrator@2.1.so
 lib64/vendor.samsung.hardware.vibrator@2.2.so
 "
+
 for blob in $BLOBS_LIST
 do
     DELETE_FROM_WORK_DIR "vendor" "$blob"
