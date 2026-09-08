@@ -5,7 +5,7 @@ MATCH_TARGET_FEATURES()
 
     SOURCE_FEATURES="$(find "$WORK_DIR/system/system/etc/permissions" -name "com.sec.feature*" -printf "%f\n")"
     SOURCE_FEATURES="$(sort <<< "$SOURCE_FEATURES")"
-    TARGET_FEATURES="$(find "$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/etc/permissions" -name "com.sec.feature*" -printf "%f\n")"
+    TARGET_FEATURES="$(find "$TARGET_FIRMWARE_PATH/system/system/etc/permissions" -name "com.sec.feature*" -printf "%f\n")"
     TARGET_FEATURES="$(sort <<< "$TARGET_FEATURES")"
 
     for f in $SOURCE_FEATURES; do
