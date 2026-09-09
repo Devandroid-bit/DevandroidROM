@@ -83,34 +83,6 @@ jobs:
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/extract_fw.sh --force --ignore-target
 
-      - name: Install samloader-rs
-        run: |
-          SAMLOADER_VERSION="2.0.0"
-          SAMLOADER_ARCHIVE="samloader-v${SAMLOADER_VERSION}-linux-x86_64.tar.xz"
-          SAMLOADER_URL="https://github.com/topjohnwu/samloader-rs/releases/download/${SAMLOADER_VERSION}/${SAMLOADER_ARCHIVE}"
-
-          echo "Downloading ${SAMLOADER_ARCHIVE}..."
-
-          curl \
-            --fail \
-            --location \
-            --retry 5 \
-            --retry-delay 3 \
-            --retry-all-errors \
-            --output "/tmp/${SAMLOADER_ARCHIVE}" \
-            "$SAMLOADER_URL"
-
-          mkdir -p /tmp/samloader-rs
-          tar -xJf "/tmp/${SAMLOADER_ARCHIVE}" -C /tmp/samloader-rs
-
-          sudo install -m 0755 \
-            /tmp/samloader-rs/samloader \
-            /usr/local/bin/samloader
-
-          echo "Installed samloader-rs:"
-          samloader --version
-          samloader --help
-
       - name: Download target firmware
         run: |
           source ./buildenv.sh ${{ matrix.target }}
