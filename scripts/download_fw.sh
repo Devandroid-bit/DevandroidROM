@@ -188,7 +188,6 @@ for i in "${FIRMWARES[@]}"; do
         LOG "- Firmware successfully downloaded."
 
         LOG "- Extracting $(basename "$ZIP_FILE")..."
-
         EVAL "unzip -o \"$ZIP_FILE\" -d \"$ODIN_DIR/${MODEL}_${CSC}\" && rm -f \"$ZIP_FILE\"" || exit 1
 
         # FIX: Dynamically determine version from the AP file and create the missing .downloaded flag
@@ -205,7 +204,7 @@ for i in "${FIRMWARES[@]}"; do
         LOG_STEP_OUT
 
     else
-        # Original samloader logic for the target firmware
+        # TARGET firmware: samloader-rs
         LATEST_FIRMWARE="$(GET_LATEST_FIRMWARE "$MODEL" "$CSC")"
         if [ ! "$LATEST_FIRMWARE" ]; then
             LOGE "Latest available firmware could not be fetched"
@@ -259,26 +258,27 @@ for i in "${FIRMWARES[@]}"; do
             (
                 cd "$OUT_DIR"
 
-                STR=""
+                SAMLOADER_VERSION="$LATEST_FIRMWARE"
 
-                [ "$MODEL" == "SM-S731B" ] && \
-                    STR=" -v S731BXXU1AYH9/S731BOXM1AYH9/S731BXXU1AYH9/S731BXXU1AYH9"
+                # Preserve the existing SM-S731B target version override.
+                if [ "$MODEL" == "SM-S731B" ]; then
+                    SAMLOADER_VERSION="S731BXXU1AYH9/S731BOXM1AYH9/S731BXXU1AYH9/S731BXXU1AYH9"
+                fi
 
                 samloader \
                     -m "$MODEL" \
                     -r "$CSC" \
-                    -i "$IMEI" \
-                    -s "$SERIAL_NO" \
-                    download$STR \
-                    -O "$ODIN_DIR/${MODEL}_${CSC}" || exit 1
+                    -v "$SAMLOADER_VERSION" \
+                    -j 8 \
+                    -d "$ODIN_DIR/${MODEL}_${CSC}" || exit 1
             )
 
             ZIP_FILE="$(find "$ODIN_DIR/${MODEL}_${CSC}" \
-                -name "*.zip" | sort -r | head -n 1)"
+                -type f -name "*.zip" | sort -r | head -n 1)"
 
             if [ ! "$ZIP_FILE" ] || [ ! -f "$ZIP_FILE" ]; then
                 if [ "$COUNT" -gt 10 ]; then
-                    LOGW "\033[0;31m! Download failed, check your network connection or device IMEI!\033[0m"
+                    LOGW "\033[0;31m! Download failed after 10 attempts.\033[0m"
                     exit 1
                 fi
 
