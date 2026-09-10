@@ -23,16 +23,16 @@ The project is based on Samsung Galaxy S22 firmware and adapted specifically for
 
 ## Upstream lineage and porting references
 
-DevAndroidROM was originally derived from and heavily modified from the [Maniac-ROM][2] project. While the project has since received extensive changes, Maniac-ROM remains an important part of its development history and upstream lineage.
+DevAndroidROM was originally derived from and heavily modified from the Maniac-ROM project. While the project has since received extensive changes, Maniac-ROM remains an important part of its development history and upstream lineage.
 
-The Galaxy Note10 adaptation additionally uses device-specific knowledge, configurations, patches, and porting experience from the [EternityROM] and [ExtremeROM] projects.
+The Galaxy Note10 adaptation additionally uses device-specific knowledge, configurations, patches, and porting experience from the EternityROM and ExtremeROM projects.
 
 | Project | Role in DevAndroidROM |
 |---|---|
-| [Maniac-ROM] | Original project base and an important part of the project's upstream lineage. |
-| [UN1CA] | Primary build system and firmware-to-package workflow. |
-| [EternityROM] | Important Galaxy Note10-series porting reference, including device-specific configurations and patches. |
-| [ExtremeROM] | Historical reference for device adaptation, porting practices, and project structure. |
+| Maniac-ROM | Original project base and an important part of the project's upstream lineage. |
+| UN1CA | Primary build system and firmware-to-package workflow. |
+| EternityROM | Important Galaxy Note10-series porting reference, including device-specific configurations and patches. |
+| ExtremeROM | Historical reference for device adaptation, porting practices, and project structure. |
 
 > **Attribution notice:** These projects are credited as upstream references and sources of technical knowledge. Their respective authors, licenses, and repository terms remain applicable. This attribution does not imply endorsement, affiliation, or active maintenance by their maintainers.
 
@@ -117,12 +117,12 @@ External dependencies may be distributed under different licenses, including:
 
 DevAndroidROM is built upon the work, knowledge, and development efforts of multiple projects and contributors.
 
-The project was originally derived from [Maniac-ROM][2], while [UN1CA][1] provides the underlying build system. Device-specific Galaxy Note10 porting knowledge and references were also obtained from projects such as [EternityROM][3] and [ExtremeROM][4].
+The project was originally derived from Maniac-ROM, while UN1CA provides the underlying build system. Device-specific Galaxy Note10 porting knowledge and references were also obtained from projects such as EternityROM and ExtremeROM.
 
 - **[salvogiangri](https://github.com/salvogiangri)** for the UN1CA build system, One UI patches, and general project support.
 - **[ricci206](https://github.com/ricci206)** for Maniac-ROM and its contribution to the project's original foundation.
-- **[Ocin4Ever](https://github.com/Ocin4ever)** and the [EternityROM project][3] for Galaxy Note10-series porting references, target-side configurations, and Exynos 9825 patches.
-- **[ExtremeXT](https://github.com/ExtremeXT)** and the [ExtremeROM project][4] for historical porting references and engineering practices.
+- **[Ocin4Ever](https://github.com/Ocin4ever)** and the EternityROM project for Galaxy Note10-series porting references, target-side configurations, and Exynos 9825 patches.
+- **[ExtremeXT](https://github.com/ExtremeXT)** and the ExtremeROM project for historical porting references and engineering practices.
 - **[Star-Seven](https://github.com/Star-Seven)** special thanks for the debugging and support. Without him, booting this ROM would not have been possible.
 - **DevAndroid contributors and maintainers** for the continued development, adaptation, debugging, integration, and maintenance of DevAndroidROM.
 
