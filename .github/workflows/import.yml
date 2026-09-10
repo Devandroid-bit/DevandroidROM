@@ -1,4 +1,4 @@
-name: Import bluetooth
+name: Import paradigm
 
 on:
   workflow_dispatch:
@@ -7,12 +7,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: import-bluetooth
+  group: import-paradigm
   cancel-in-progress: false
 
 jobs:
   import-prebuilts:
-    name: Import bluetooth
+    name: Import paradigm
     runs-on: ubuntu-latest
 
     steps:
@@ -33,15 +33,15 @@ jobs:
           git clone \
             --depth=1 \
             --branch sixteen \
-            https://github.com/Fede2782/UN1CA.git \
+            https://github.com/ricci206/Maniac-ROM.git \
             source-repo
 
       - name: Import bluetooth
         run: |
           set -e
 
-          SOURCE_DIR="source-repo/unica/patches/bluetooth"
-          DEST_DIR="unica/patches/bluetooth"
+          SOURCE_DIR="source-repo/unica/mods/paradigm/smali/system/priv-app/EnvironmentAdaptiveDisplay"
+          DEST_DIR="unica/mods/paradigm/smali/system/priv-app/EnvironmentAdaptiveDisplay"
 
           if [ ! -d "$SOURCE_DIR" ]; then
             echo "::error::Source directory does not exist: $SOURCE_DIR"
@@ -54,7 +54,7 @@ jobs:
           echo "Creating destination directory..."
           mkdir -p "$DEST_DIR"
 
-          echo "Copying bluetooth..."
+          echo "Copying paradigm..."
           rsync -a \
             --delete \
             "$SOURCE_DIR/" \
@@ -65,12 +65,12 @@ jobs:
       - name: Check imported files
         run: |
           echo "Total files imported:"
-          find unica/patches/bluetooth -type f | wc -l
+          find unica/mods/paradigm/smali/system/priv-app/EnvironmentAdaptiveDisplay -type f | wc -l
 
       - name: Check for changes
         id: changes
         run: |
-          git add -A unica/patches/bluetooth
+          git add -A unica/mods/paradigm/smali/system/priv-app/EnvironmentAdaptiveDisplay
 
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -83,8 +83,8 @@ jobs:
       - name: Commit changes
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git commit -m "unica: patches: bluetooth: update for August firmware" \
-          -m "Author and credits: @salvogiangri"
+          git commit -m "unica: mods: paradigm: add EnvironmentAdaptiveDisplay smali" \
+          -m "Author and credits: @ricci206, @salvogiangri"
 
       - name: Rebase onto latest sixteen
         if: steps.changes.outputs.changed == 'true'
