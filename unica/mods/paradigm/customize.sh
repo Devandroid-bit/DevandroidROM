@@ -33,7 +33,7 @@ APPLY_PATCH "system" "system/priv-app/SecSoundPicker/SecSoundPicker.apk" \
 LOG_STEP_OUT
 
 # Adaptive colour tone
-if [ "$TARGET_DEVICE" != "d2s" ] && [ "$TARGET_DEVICE" != "d2xks" ] && [ "$TARGET_DEVICE" != "d2x" ]; then
+if [ "$TARGET_CODENAME" != "d2s" ] && [ "$TARGET_CODENAME" != "d2xks" ] && [ "$TARGET_CODENAME" != "d2x" ]; then
     LOG_STEP_IN "- Adding Adaptive colour tone feature"
     ADD_TO_WORK_DIR "pa2qxxx" "system" \
         "system/etc/permissions/privapp-permissions-com.samsung.android.sead.xml" 0 0 644 "u:object_r:system_file:s0"
