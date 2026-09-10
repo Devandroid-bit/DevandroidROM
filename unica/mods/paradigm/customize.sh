@@ -69,8 +69,8 @@ if [ "$TARGET_CODENAME" != "d2s" ] && [ "$TARGET_CODENAME" != "d2xks" ] && [ "$T
 fi
 
 
-# Set AI Version to 20242
-SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_AI_VERSION" "20242"
+# Set AI Version to 20251
+SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_AI_VERSION" "20251"
 ADD_TO_WORK_DIR "pa2qxxx" "system" "system/app/SketchBook/SketchBook.apk" 0 0 644 "u:object_r:system_file:s0"
 
 # Media Context Analyzer
