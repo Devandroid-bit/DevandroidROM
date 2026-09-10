@@ -83,7 +83,7 @@ jobs:
       - name: Commit changes
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git commit -m "prebuilts: import bluetooth" \
+          git commit -m "unica: patches: bluetooth: update for August firmware" \
           -m "Author and credits: @salvogiangri"
 
       - name: Rebase onto latest sixteen
