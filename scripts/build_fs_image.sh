@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# [
 source "$SRC_DIR/scripts/utils/build_utils.sh" || exit 1
 
 FORCE=false
@@ -30,6 +29,8 @@ MOUNT_POINT=""
 OUTPUT_FILE=""
 FILE_CONTEXT_FILE=""
 FS_CONFIG_FILE=""
+AVB_SIGN=""
+MAP_FILE=false
 
 # https://android.googlesource.com/platform/build/+/refs/tags/android-15.0.0_r1/tools/releasetools/build_image.py#266
 BUILD_IMAGE_MKFS()
@@ -163,8 +164,15 @@ PREPARE_SCRIPT()
     shift
 
     while [[ "$1" == "-"* ]]; do
-        if [[ "$1" == "--force" ]] || [[ "$1" == "-f" ]]; then
+        if [[ "$1" == "--avb" ]] || [[ "$1" == "--no-avb" ]]; then
+            if [ ! "$AVB_SIGN" ]; then
+                [[ "$1" == "--avb" ]] && AVB_SIGN=true
+                [[ "$1" == "--no-avb" ]] && AVB_SIGN=false
+            fi
+        elif [[ "$1" == "--force" ]] || [[ "$1" == "-f" ]]; then
             FORCE=true
+        elif [[ "$1" == "--generate-map" ]] || [[ "$1" == "-m" ]]; then
+            MAP_FILE=true
         elif [[ "$1" == "--inodes" ]] || [[ "$1" == "-i" ]]; then
             shift; INODES="$1"
             if ! [[ "$INODES" =~ ^[+-]?[0-9]+$ ]]; then
@@ -200,6 +208,14 @@ PREPARE_SCRIPT()
 
         shift
     done
+
+    if [ ! "$AVB_SIGN" ]; then
+        if $TARGET_DISABLE_AVB_SIGNING; then
+            AVB_SIGN=false
+        else
+            AVB_SIGN=true
+        fi
+    fi
 
     INPUT_DIR="$1"
     if [ ! "$INPUT_DIR" ]; then
@@ -261,8 +277,10 @@ PREPARE_SCRIPT()
 PRINT_USAGE()
 {
     echo "Usage: build_fs_image <fs> [options] <dir> <file_context> <fs_config>" >&2
+    echo " --avb, --no-avb : Force enable or disable AVB signing" >&2
     echo " -f, --force : Force delete output file" >&2
     echo " -i, --inodes : (ext4 only) Specify the extfs inodes count" >&2
+    echo " -m, --generate-map : Generate block map file" >&2
     echo " -o, --output : Specify the output image path, defaults to the parent input directory" >&2
     echo " -p, --partition-name : Specify the partition name, defaults to the input directory name" >&2
     echo " -s, --partition-size : Specify the partition size, defaults to the smallest possible" >&2
