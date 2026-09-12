@@ -40,21 +40,21 @@ jobs:
         run: |
           set -e
 
-          SOURCE_DIR="source-repo/prebuilts/a34xxx"
-          DEST_DIR="prebuilts/a34xxx"
+          SOURCE_DIR="source-repo/prebuilts/samsung/a34xxx"
+          DEST_DIR="prebuilts/samsung/a34xxx"
 
           if [ ! -d "$SOURCE_DIR" ]; then
             echo "::error::Source directory does not exist: $SOURCE_DIR"
             exit 1
           fi
 
-          echo "Removing existing bluetooth..."
+          echo "Removing existing prebuilts..."
           rm -rf "$DEST_DIR"
 
           echo "Creating destination directory..."
           mkdir -p "$DEST_DIR"
 
-          echo "Copying paradigm..."
+          echo "Copying prebuilts..."
           rsync -a \
             --delete \
             "$SOURCE_DIR/" \
@@ -65,12 +65,12 @@ jobs:
       - name: Check imported files
         run: |
           echo "Total files imported:"
-          find prebuilts/a34xxx -type f | wc -l
+          find prebuilts/samsung/34xxx -type f | wc -l
 
       - name: Check for changes
         id: changes
         run: |
-          git add -A prebuilts/a34xxx
+          git add -A prebuilts/samsung/a34xxx
 
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
