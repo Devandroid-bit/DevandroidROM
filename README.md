@@ -23,16 +23,16 @@ The project is based on Samsung Galaxy S22 firmware and adapted specifically for
 
 ## Upstream lineage and porting references
 
-DevAndroidROM was originally derived from and heavily modified from the Maniac-ROM project. While the project has since received extensive changes, Maniac-ROM remains an important part of its development history and upstream lineage.
+DevAndroidROM was originally derived from and heavily modified from the Maniac-ROM project. While the project has since received extensive changes, **[Maniac-ROM](https://github.com/ricci206/Maniac-ROM)** remains an important part of its development history and upstream lineage.
 
-The Galaxy Note10 adaptation additionally uses device-specific knowledge, configurations, patches, and porting experience from the EternityROM and ExtremeROM projects.
+The Galaxy Note10 adaptation additionally uses device-specific knowledge, configurations, patches, and porting experience from the **[EternityROM](https://github.com/Ocin4ever/EternityROM/tree/fifteen)** and **[ExtremeROM](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen)** projects.
 
 | Project | Role in DevAndroidROM |
 |---|---|
-| Maniac-ROM | Original project base and an important part of the project's upstream lineage. |
-| UN1CA | Primary build system and firmware-to-package workflow. |
-| EternityROM | Important Galaxy Note10-series porting reference, including device-specific configurations and patches. |
-| ExtremeROM | Historical reference for device adaptation, porting practices, and project structure. |
+| **[Maniac-ROM](https://github.com/ricci206/Maniac-ROM)** | Original project base and an important part of the project's upstream lineage. |
+| **[UNICA](https://github.com/salvogiangri/UN1CA)** | Primary build system and firmware-to-package workflow. |
+| **[EternityROM](https://github.com/Ocin4ever/EternityROM/tree/fifteen)** | Important Galaxy Note10-series porting reference, including device-specific configurations and patches. |
+| **[ExtremeROM](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen)** | Historical reference for device adaptation, porting practices, and project structure. |
 
 > **Attribution notice:** These projects are credited as upstream references and sources of technical knowledge. Their respective authors, licenses, and repository terms remain applicable. This attribution does not imply endorsement, affiliation, or active maintenance by their maintainers.
 
