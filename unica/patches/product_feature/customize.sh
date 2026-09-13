@@ -158,20 +158,20 @@ fi
 # SEC_PRODUCT_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL
 if ! $SOURCE_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
     if $TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
-        if [[ "$(GET_FINGERPRINT_SENSOR_TYPE "$TARGET_FINGERPRINT_CONFIG_SENSOR")" == "optical" ]]; then
+        if [[ "$(GET_FINGERPRINT_SENSOR_TYPE "$TARGET_FP_SENSOR_CONFIG")" == "optical" ]]; then
             ABORT "TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL is not supported on targets with an optical fingerprint sensor"
         fi
 
         SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_DYN_RESOLUTION_CONTROL" "WQHD,FHD,HD"
 
-        ADD_TO_WORK_DIR "$([[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
+        ADD_TO_WORK_DIR "$([[ "$TARGET_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
             "system" "system/bin/bootanimation" 0 2000 755 "u:object_r:bootanim_exec:s0"
-        ADD_TO_WORK_DIR "$([[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
+        ADD_TO_WORK_DIR "$([[ "$TARGET_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && echo "b0qxxx" || echo "b0sxxx")" \
             "system" "system/bin/surfaceflinger" 0 2000 755 "u:object_r:surfaceflinger_exec:s0"
         # Ensure IQtiComposer support (pre-API 36)
         # Check unica/patches/legacy/customize.sh for more info.
-        if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
-            if [[ "$TARGET_OS_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && \
+        if [ "$TARGET_VNDK_VERSION" -lt "36" ]; then
+            if [[ "$TARGET_SINGLE_SYSTEM_IMAGE" == "qssi" ]] && \
                     ! grep -q -r "IQtiComposer" "$WORK_DIR/vendor/etc/vintf"; then
                 # [b.lt #0x72b2b0] -> [nop]
                 HEX_PATCH "$WORK_DIR/system/system/bin/surfaceflinger" "9f8a00712b03005400068052" "9f8a00711f2003d500068052"
@@ -204,7 +204,7 @@ if ! $SOURCE_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
         ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/temperature_limit_usb.spi" 0 0 644 "u:object_r:system_file:s0"
         ADD_TO_WORK_DIR "b0qxxx" "system" "system/media/water_protection_usb.spi" 0 0 644 "u:object_r:system_file:s0"
 
-        if [ "$TARGET_PLATFORM_SDK_VERSION" -ge "36" ]; then
+        if [ "$TARGET_VNDK_VERSION" -ge "36" ]; then
             APPLY_PATCH "system" "system/framework/framework.jar" \
                 "$MODPATH/resolution/framework.jar/0001-Enable-FW_SUPPORT_MULTI_RESOLUTION.patch"
         else
@@ -226,7 +226,7 @@ if ! $SOURCE_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
             "smali_classes2/com/android/settings/applications/manageapplications/ManageApplications\$ApplicationsAdapter\$\$ExternalSyntheticLambda9.smali" "remove"
         SMALI_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
             "smali_classes2/com/android/settings/applications/manageapplications/ManageApplications\$ApplicationsAdapter\$\$ExternalSyntheticOutline0.smali" "remove"
-        if [ "$TARGET_PLATFORM_SDK_VERSION" -lt "36" ]; then
+        if [ "$TARGET_VNDK_VERSION" -lt "36" ]; then
             APPLY_PATCH "system" "system/priv-app/SecSettings/SecSettings.apk" \
                 "$MODPATH/resolution/SecSettings.apk/0002-Backport-legacy-DYN_RESOLUTION_CONTROL-code.patch"
             EVAL "sed -i \"/static fields/,+3d\" \"$APKTOOL_DIR/system/priv-app/SecSettings/SecSettings.apk/smali_classes4/com/samsung/android/settings/display/ScreenResolutionFragment.smali\""
