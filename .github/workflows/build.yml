@@ -58,11 +58,9 @@ jobs:
 
       - name: Install baksmali
         run: |
-          BAKSMALI_VERSION="2.5.2"
-          BAKSMALI_JAR="baksmali-${BAKSMALI_VERSION}-fat.jar"
-          BAKSMALI_URL="https://repo1.maven.org/maven2/org/smali/baksmali/${BAKSMALI_VERSION}/${BAKSMALI_JAR}"
+          BAKSMALI_URL="https://github.com/PhantomZone54/JesusFreke_smali_Snapshots/releases/download/2.5.2-cbd41d36/baksmali-2.5.2-cbd41d36-fat.jar"
 
-          echo "Downloading ${BAKSMALI_JAR}..."
+          echo "Downloading baksmali..."
 
           curl \
             --fail \
