@@ -122,7 +122,7 @@ SEC_FLOATING_FEATURE_CAMERA_CONFIG_WINE_DETECTOR=OFF
 SEC_FLOATING_FEATURE_CAMERA_GRAW_CONFIG_MFP_PIPELINE_MODE=V1
 SEC_FLOATING_FEATURE_GALLERY_CONFIG_AI_EXPANSION=AI_Timelapse
 SEC_FLOATING_FEATURE_GENAI_SUPPORT_TIME_WEATHER_WALLPAPER=None
-SEC_FLOATING_FEATURE_GRAPHICS_CONFIG_GAME_DEFAULT_FRAMERATE=${TARGET_HFR_DEFAULT_REFRESH_RATE:-60}
+SEC_FLOATING_FEATURE_GRAPHICS_CONFIG_GAME_DEFAULT_FRAMERATE=${TARGET_LCD_CONFIG_HFR_DEFAULT_REFRESH_RATE:-60}
 SEC_FLOATING_FEATURE_GRAPHICS_CONFIG_GAMEBOOSTER_MORE_HEAT=30
 SEC_FLOATING_FEATURE_LCD_CONFIG_AOD_BRIGHTNESS_ANIMATION=0
 SEC_FLOATING_FEATURE_LCD_CONFIG_AOD_FULLSCREEN=0
@@ -170,11 +170,22 @@ APPLY_TARGET_FEATURE()
     local FEATURE
     local SOURCE_VALUE
     local TARGET_VALUE
+    local SOURCE_FEATURE_LIST
 
     # Step 1: iterate through work_dir floating_feature.xml
     if [ ! -f "$SOURCE_FILE" ]; then
         LOG "!! SOURCE_FILE missing at $SOURCE_FILE, skipping Step 1 entirely"
     else
+        # Snapshot source's key list BEFORE Step 1 starts deleting/modifying
+        # entries in $SOURCE_FILE in place. Step 2 needs this original list --
+        # checking the live (post-Step-1) file there is the bug that was
+        # silently nuking keys like SMARTMANAGER_CONFIG_PACKAGE_NAME: every
+        # key Step 1 legitimately deletes (no target value, no fallback)
+        # would otherwise look to Step 2 like it "was never in source," so
+        # Step 2 tries to re-add it from the very target that had nothing
+        # for it -- the same reason it got deleted in the first place.
+        SOURCE_FEATURE_LIST="$(awk -F '<|>' '/^    <SEC_FLOATING_FEATURE_/{print $2}' "$SOURCE_FILE")"
+
         while IFS= read -r l; do
             if [ ! "$l" ] || [[ "$l" == *"xml"* ]] || [[ "$l" == *"SecFloatingFeatureSet"* ]]; then
                 continue
@@ -226,7 +237,7 @@ APPLY_TARGET_FEATURE()
                 continue
             fi
 
-            if ! grep -q -w "$FEATURE" "$SOURCE_FILE" 2>/dev/null && ! grep -q -w "$FEATURE" <<< "$DEPRECATED"; then
+            if ! grep -q -w "$FEATURE" <<< "$SOURCE_FEATURE_LIST" && ! grep -q -w "$FEATURE" <<< "$DEPRECATED"; then
                 SAFE_SET_FLOATING_FEATURE_CONFIG "$FEATURE" "$(SAFE_GET_FLOATING_FEATURE_CONFIG "$TARGET_FILE" "$FEATURE")"
             fi
         done < "$TARGET_FILE"
