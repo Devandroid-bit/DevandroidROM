@@ -59,9 +59,10 @@ jobs:
       - name: Install baksmali
         run: |
           BAKSMALI_VERSION="2.5.2"
-          BAKSMALI_URL="https://repo1.maven.org/maven2/org/smali/baksmali/${BAKSMALI_VERSION}/baksmali-${BAKSMALI_VERSION}.jar"
+          BAKSMALI_JAR="baksmali-${BAKSMALI_VERSION}-fat.jar"
+          BAKSMALI_URL="https://repo1.maven.org/maven2/org/smali/baksmali/${BAKSMALI_VERSION}/${BAKSMALI_JAR}"
 
-          echo "Downloading baksmali ${BAKSMALI_VERSION}..."
+          echo "Downloading ${BAKSMALI_JAR}..."
 
           curl \
             --fail \
@@ -76,7 +77,7 @@ jobs:
           ls -lh baksmali.jar
 
           java -jar baksmali.jar --version
-
+          
       - name: Fix script permissions
         run: |
           echo "Fixing permissions for all shell scripts..."
