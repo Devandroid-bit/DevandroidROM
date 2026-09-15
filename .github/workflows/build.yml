@@ -49,32 +49,6 @@ jobs:
           echo -n "${{ secrets.PLATFORM_KEY_PK8 }}" | base64 --decode > security/extremerom_platform.pk8
           echo -n "${{ secrets.PLATFORM_KEY_PEM }}" | base64 --decode > security/extremerom_platform.x509.pem
 
-      - name: Set up Java 11 for baksmali build
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Build and install baksmali
-        run: |
-          git clone --depth=1 --branch v2.5.2 https://github.com/JesusFreke/smali.git /tmp/smali
-          cd /tmp/smali
-          ./gradlew jar :baksmali:fatJar
-
-          # Copy JAR to workspace root and global bin
-          sudo cp baksmali/build/libs/baksmali-*-fat.jar /usr/local/bin/baksmali.jar
-          cp baksmali/build/libs/baksmali-*-fat.jar "$GITHUB_WORKSPACE/baksmali.jar"
-
-          # Create executable wrapper in system PATH
-          sudo bash -c 'cat << "EOF" > /usr/local/bin/baksmali
-          #!/bin/sh
-          exec java -jar /usr/local/bin/baksmali.jar "$@"
-          EOF'
-          sudo chmod +x /usr/local/bin/baksmali /usr/local/bin/baksmali.jar
-
-          echo "Baksmali successfully built and installed:"
-          baksmali --version
-
       - name: Set up Java 21 for ROM build
         uses: actions/setup-java@v4
         with:
