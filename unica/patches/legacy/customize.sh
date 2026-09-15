@@ -3,7 +3,14 @@
 # Note: Kernel, ramdisk, and init.rc modifications are bypassed (handled by platform patch)
 
 WORK_DIR="workdir"
-SYSTEM_DIR="$WORK_DIR/system"
+
+# Automatically resolve System-as-Root (SAR) vs Non-SAR system paths
+if [ -d "$WORK_DIR/system/system/framework" ]; then
+    SYSTEM_DIR="$WORK_DIR/system/system"
+else
+    SYSTEM_DIR="$WORK_DIR/system"
+fi
+
 VENDOR_DIR="$WORK_DIR/vendor"
 
 echo "Applying Framework & HAL Translation Patches for One UI 8..."
