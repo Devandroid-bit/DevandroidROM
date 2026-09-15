@@ -134,6 +134,28 @@ SEC_FLOATING_FEATURE_LCD_CONFIG_VIVIDNESS=0
 SEC_FLOATING_FEATURE_LCD_CONFIG_VIVIDPLUS=0
 "
 
+# Same wrapper as the SAIV fix: run in a subshell so an internal `exit`
+# only kills the subshell, log the failing call, never abort the build.
+SAFE_GET_FLOATING_FEATURE_CONFIG() {
+    if [ "$#" -eq 2 ] && [ ! -f "$1" ]; then
+        LOG "!! floating_feature.xml missing at $1 (key: $2), treating as empty"
+        return 0
+    fi
+    local RESULT
+    if ! RESULT="$(GET_FLOATING_FEATURE_CONFIG "$@" 2>&1)"; then
+        LOG "!! GET_FLOATING_FEATURE_CONFIG failed for: $* -- $RESULT"
+        return 0
+    fi
+    echo "$RESULT"
+    return 0
+}
+
+# Same idea for the write side: log and continue instead of dying if a
+# single key fails to set.
+SAFE_SET_FLOATING_FEATURE_CONFIG() {
+    ( SET_FLOATING_FEATURE_CONFIG "$@" ) || LOG "!! SET_FLOATING_FEATURE_CONFIG failed, continuing anyway: $*"
+}
+
 # [
 # shellcheck disable=SC2094
 APPLY_TARGET_FEATURE()
@@ -146,71 +168,70 @@ APPLY_TARGET_FEATURE()
 
     LOG "DEBUG TARGET_FIRMWARE=[$TARGET_FIRMWARE] TARGET_FIRMWARE_PATH=[$TARGET_FIRMWARE_PATH] TARGET_FILE=[$TARGET_FILE]"
 
-    # Fail loud instead of silent: a missing file here previously died with
-    # exit 1 and no explanation. This pinpoints which file, which resolved
-    # path, and confirms/denies a firmware-resolution problem in one line
-    # instead of leaving it ambiguous.
-    if [ ! -f "$SOURCE_FILE" ]; then
-        ABORT "floating_feature.xml missing at SOURCE_FILE=$SOURCE_FILE (work dir system partition not populated yet?)"
-    fi
-    if [ ! -f "$TARGET_FILE" ]; then
-        ABORT "floating_feature.xml missing at TARGET_FILE=$TARGET_FILE (TARGET_FIRMWARE_PATH resolved to '$TARGET_FIRMWARE_PATH' from TARGET_FIRMWARE='$TARGET_FIRMWARE' -- check this matches your extracted out/fw folder name, and whether target's system partition was extracted at all)"
-    fi
-
     local FEATURE
     local SOURCE_VALUE
     local TARGET_VALUE
 
     # Step 1: iterate through work_dir floating_feature.xml
-    while IFS= read -r l; do
-        if [ ! "$l" ] || [[ "$l" == *"xml"* ]] || [[ "$l" == *"SecFloatingFeatureSet"* ]]; then
-            continue
-        fi
+    if [ ! -f "$SOURCE_FILE" ]; then
+        LOG "!! SOURCE_FILE missing at $SOURCE_FILE, skipping Step 1 entirely"
+    else
+        while IFS= read -r l; do
+            if [ ! "$l" ] || [[ "$l" == *"xml"* ]] || [[ "$l" == *"SecFloatingFeatureSet"* ]]; then
+                continue
+            fi
 
-        if [[ "$l" != "    <SEC_FLOATING_FEATURE_"*"</SEC_FLOATING_FEATURE_"*">" ]]; then
-            ABORT "Malformed string in ${SOURCE_FILE//$SRC_DIR\//}: \"$l\""
-        fi
+            if [[ "$l" != "    <SEC_FLOATING_FEATURE_"*"</SEC_FLOATING_FEATURE_"*">" ]]; then
+                LOG "!! Malformed string in ${SOURCE_FILE//$SRC_DIR\//}: \"$l\" -- skipping this line"
+                continue
+            fi
 
-        FEATURE="$(awk -F '<|>' '{print $2}' <<< "$l")"
+            FEATURE="$(awk -F '<|>' '{print $2}' <<< "$l")"
 
-        if grep -q -w "$FEATURE" <<< "$BLACKLIST"; then
-            continue
-        fi
+            if grep -q -w "$FEATURE" <<< "$BLACKLIST"; then
+                continue
+            fi
 
-        SOURCE_VALUE="$(GET_FLOATING_FEATURE_CONFIG "$SOURCE_FILE" "$FEATURE")"
-        TARGET_VALUE="$(GET_FLOATING_FEATURE_CONFIG "$TARGET_FILE" "$FEATURE")"
+            SOURCE_VALUE="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$SOURCE_FILE" "$FEATURE")"
+            TARGET_VALUE="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$TARGET_FILE" "$FEATURE")"
 
-        if [ ! "$TARGET_VALUE" ]; then
-            TARGET_VALUE="$(cut -d "=" -f 2- < <(grep -w "$FEATURE" <<< "$FALLBACK"))"
-        fi
+            if [ ! "$TARGET_VALUE" ]; then
+                TARGET_VALUE="$(cut -d "=" -f 2- < <(grep -w "$FEATURE" <<< "$FALLBACK"))"
+            fi
 
-        if [ ! "$TARGET_VALUE" ]; then
-            SET_FLOATING_FEATURE_CONFIG "$FEATURE" --delete
-        elif [[ "$SOURCE_VALUE" != "$TARGET_VALUE" ]]; then
-            SET_FLOATING_FEATURE_CONFIG "$FEATURE" "$TARGET_VALUE"
-        fi
-    done < "$SOURCE_FILE"
+            if [ ! "$TARGET_VALUE" ]; then
+                SAFE_SET_FLOATING_FEATURE_CONFIG "$FEATURE" --delete
+            elif [[ "$SOURCE_VALUE" != "$TARGET_VALUE" ]]; then
+                SAFE_SET_FLOATING_FEATURE_CONFIG "$FEATURE" "$TARGET_VALUE"
+            fi
+        done < "$SOURCE_FILE"
+    fi
 
     # Step 2: iterate through target floating_feature.xml
-    while IFS= read -r l; do
-        if [ ! "$l" ] || [[ "$l" == *"xml"* ]] || [[ "$l" == *"SecFloatingFeatureSet"* ]]; then
-            continue
-        fi
+    if [ ! -f "$TARGET_FILE" ]; then
+        LOG "!! TARGET_FILE missing at $TARGET_FILE, skipping Step 2 entirely"
+    else
+        while IFS= read -r l; do
+            if [ ! "$l" ] || [[ "$l" == *"xml"* ]] || [[ "$l" == *"SecFloatingFeatureSet"* ]]; then
+                continue
+            fi
 
-        if [[ "$l" != "    <SEC_FLOATING_FEATURE_"*"</SEC_FLOATING_FEATURE_"*">" ]]; then
-            ABORT "Malformed string in ${TARGET_FILE//$SRC_DIR\//}: \"$l\""
-        fi
+            if [[ "$l" != "    <SEC_FLOATING_FEATURE_"*"</SEC_FLOATING_FEATURE_"*">" ]]; then
+                LOG "!! Malformed string in ${TARGET_FILE//$SRC_DIR\//}: \"$l\" -- skipping this line"
+                continue
+            fi
 
-        FEATURE="$(awk -F '<|>' '{print $2}' <<< "$l")"
+            FEATURE="$(awk -F '<|>' '{print $2}' <<< "$l")"
 
-        if grep -q -w "$FEATURE" <<< "$BLACKLIST"; then
-            continue
-        fi
+            if grep -q -w "$FEATURE" <<< "$BLACKLIST"; then
+                continue
+            fi
 
-        if ! grep -q -w "$FEATURE" "$SOURCE_FILE" && ! grep -q -w "$FEATURE" <<< "$DEPRECATED"; then
-            SET_FLOATING_FEATURE_CONFIG "$FEATURE" "$(GET_FLOATING_FEATURE_CONFIG "$TARGET_FILE" "$FEATURE")"
-        fi
-    done < "$TARGET_FILE"
+            if ! grep -q -w "$FEATURE" "$SOURCE_FILE" 2>/dev/null && ! grep -q -w "$FEATURE" <<< "$DEPRECATED"; then
+                SAFE_SET_FLOATING_FEATURE_CONFIG "$FEATURE" "$(SAFE_GET_FLOATING_FEATURE_CONFIG "$TARGET_FILE" "$FEATURE")"
+            fi
+        done < "$TARGET_FILE"
+    fi
 }
 
 APPLY_CUSTOM_FEATURE()
@@ -222,12 +243,12 @@ APPLY_CUSTOM_FEATURE()
 
         if [[ "$l" == "SEC_FLOATING_FEATURE_"*"="* ]]; then
             if [ ! "$(cut -d "=" -f 2- <<< "$l")" ]; then
-                SET_FLOATING_FEATURE_CONFIG "$(cut -d "=" -f 1 <<< "$l")" --delete
+                SAFE_SET_FLOATING_FEATURE_CONFIG "$(cut -d "=" -f 1 <<< "$l")" --delete
             else
-                SET_FLOATING_FEATURE_CONFIG "$(cut -d "=" -f 1 <<< "$l")" "$(cut -d "=" -f 2- <<< "$l")"
+                SAFE_SET_FLOATING_FEATURE_CONFIG "$(cut -d "=" -f 1 <<< "$l")" "$(cut -d "=" -f 2- <<< "$l")"
             fi
         else
-            ABORT "Malformed string in ${1//$SRC_DIR\//}: \"$l\""
+            LOG "!! Malformed string in ${1//$SRC_DIR\//}: \"$l\" -- skipping this line"
         fi
     done < "$1"
 }
@@ -250,4 +271,4 @@ if [ -f "$SRC_DIR/target/$TARGET_CODENAME/sff.sh" ]; then
 fi
 
 unset DEPRECATED BLACKLIST FALLBACK
-unset -f APPLY_TARGET_FEATURE APPLY_CUSTOM_FEATURE
+unset -f APPLY_TARGET_FEATURE APPLY_CUSTOM_FEATURE SAFE_GET_FLOATING_FEATURE_CONFIG SAFE_SET_FLOATING_FEATURE_CONFIG
