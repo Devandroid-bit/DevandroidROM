@@ -58,23 +58,21 @@ jobs:
 
       - name: Install baksmali
         run: |
-          BAKSMALI_URL="https://github.com/PhantomZone54/JesusFreke_smali_Snapshots/releases/download/2.5.2-cbd41d36/baksmali-2.5.2-cbd41d36-fat.jar"
+          git clone --depth=1 --branch v2.5.2 \
+            https://github.com/JesusFreke/smali.git \
+            /tmp/smali
 
-          echo "Downloading baksmali..."
+          cd /tmp/smali
 
-          curl \
-            --fail \
-            --location \
-            --retry 5 \
-            --retry-delay 3 \
-            --retry-all-errors \
-            --output baksmali.jar \
-            "$BAKSMALI_URL"
+          ./gradlew :baksmali:fatJar
+
+          cp baksmali/build/libs/baksmali-*-fat.jar \
+            "$GITHUB_WORKSPACE/baksmali.jar"
 
           echo "baksmali installed:"
-          ls -lh baksmali.jar
+          ls -lh "$GITHUB_WORKSPACE/baksmali.jar"
 
-          java -jar baksmali.jar --version
+          java -jar "$GITHUB_WORKSPACE/baksmali.jar" --version
           
       - name: Fix script permissions
         run: |
