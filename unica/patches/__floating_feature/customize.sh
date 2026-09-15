@@ -138,15 +138,14 @@ SEC_FLOATING_FEATURE_LCD_CONFIG_VIVIDPLUS=0
 # only kills the subshell, log the failing call, never abort the build.
 SAFE_GET_FLOATING_FEATURE_CONFIG() {
     if [ "$#" -eq 2 ] && [ ! -f "$1" ]; then
-        LOG "!! floating_feature.xml missing at $1 (key: $2), treating as empty"
+        LOG "!! floating_feature.xml missing at $1 (key: $2), treating as empty" >&2
         return 0
     fi
-    local RESULT
-    if ! RESULT="$(GET_FLOATING_FEATURE_CONFIG "$@" 2>&1)"; then
-        LOG "!! GET_FLOATING_FEATURE_CONFIG failed for: $* -- $RESULT"
-        return 0
-    fi
-    echo "$RESULT"
+    # A nonzero exit here just means "key not found" -- normal and expected
+    # for most keys given how far apart source and target's OS generations
+    # are. That is not an error, so it is never logged and never allowed to
+    # propagate a failing exit status into the caller's VAR="$(...)" capture.
+    GET_FLOATING_FEATURE_CONFIG "$@" 2>/dev/null
     return 0
 }
 
