@@ -139,10 +139,18 @@ SEC_FLOATING_FEATURE_LCD_CONFIG_VIVIDPLUS=0
 APPLY_TARGET_FEATURE()
 {
     local TARGET_FIRMWARE_PATH
-    TARGET_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$TARGET_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$TARGET_FIRMWARE")"
+    
+    # FIX: Identical robust path calculation as the fixed saiv_api patch
+    TARGET_FIRMWARE_PATH="$(echo -n "$TARGET_FIRMWARE" | sed 's./._.g' | rev | cut -d "_" -f2- | rev)"
 
     local SOURCE_FILE="$WORK_DIR/system/system/etc/floating_feature.xml"
     local TARGET_FILE="$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/etc/floating_feature.xml"
+
+    # FIX: Safe-guard to prevent the script from crashing if the TARGET_FILE doesn't exist
+    if [ ! -f "$TARGET_FILE" ]; then
+        LOG "!! TARGET_FILE missing at $TARGET_FILE, skipping target features comparison"
+        return 0
+    fi
 
     local FEATURE
     local SOURCE_VALUE
