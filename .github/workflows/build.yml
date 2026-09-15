@@ -59,7 +59,7 @@ jobs:
         run: |
           git clone --depth=1 --branch v2.5.2 https://github.com/JesusFreke/smali.git /tmp/smali
           cd /tmp/smali
-          ./gradlew :baksmali:fatJar
+          ./gradlew jar :baksmali:fatJar
 
           # Copy JAR to workspace root and global bin
           sudo cp baksmali/build/libs/baksmali-*-fat.jar /usr/local/bin/baksmali.jar
