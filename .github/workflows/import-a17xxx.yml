@@ -1,0 +1,105 @@
+name: Import a17xxx
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-a17xxx
+  cancel-in-progress: false
+
+jobs:
+  import-targets:
+    name: Import a17xxx
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sixteen branch
+        uses: actions/checkout@v4
+        with:
+          ref: sixteen
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone source repository
+        run: |
+          git clone \
+            --depth=1 \
+            --branch sixteen \
+            https://github.com/salvogiangri/UN1CA.git \
+            source-repo
+
+      - name: Import prebuilts
+        run: |
+          set -e
+
+          SOURCE_DIR="source-repo/prebuilts/samsung/a17xxx"
+          DEST_DIR="prebuilts/samsung/a17xxx"
+
+          if [ ! -d "$SOURCE_DIR" ]; then
+            echo "::error::Source directory does not exist: $SOURCE_DIR"
+            exit 1
+          fi
+
+          echo "Removing existing prebuilts/samsung/a17xxx..."
+          rm -rf "$DEST_DIR"
+
+          echo "Creating destination directory..."
+          mkdir -p "$DEST_DIR"
+
+          echo "Copying prebuilts/samsung/a17xxx..."
+          rsync -a --delete "$SOURCE_DIR/" "$DEST_DIR/"
+
+          echo "prebuilts/samsung/a17xxx imported successfully."
+
+      - name: Check imported files
+        run: |
+          echo "Target files:"
+          find target -type f | wc -l
+
+          echo "prebuilts/samsung/a17xxx files:"
+          find prebuilts/samsung/a17xxx -type f | wc -l
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git add -A prebuilts/samsung/a17xxx
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected."
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git commit \
+            -m "init prebuilts a17xxx" \
+               -m "Author and credits: @salvogiangri"
+
+      - name: Rebase sixteen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git fetch origin sixteen
+
+          git rebase origin/sixteen
+
+      - name: Push changes to sixteen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git push --force-with-lease origin HEAD:sixteen
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf source-repo
