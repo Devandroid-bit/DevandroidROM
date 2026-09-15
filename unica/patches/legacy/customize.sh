@@ -2,8 +2,6 @@
 # Refactored One UI 8 Translation Script for d1xks (Galaxy Note 10 5G)
 # Note: Kernel, ramdisk, and init.rc modifications are bypassed (handled by platform patch)
 
-WORK_DIR="workdir"
-
 # Automatically resolve System-as-Root (SAR) vs Non-SAR system paths
 if [ -d "$WORK_DIR/system/system/framework" ]; then
     SYSTEM_DIR="$WORK_DIR/system/system"
