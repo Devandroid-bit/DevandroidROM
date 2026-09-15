@@ -1,50 +1,75 @@
-#!/bin/bash
-# Refactored One UI 8 Translation Script for d1xks (Galaxy Note 10 5G)
-# Note: Kernel, ramdisk, and init.rc modifications are bypassed (handled by platform patch)
+# shellcheck disable=SC2034
+SKIPUNZIP=1
 
-# Automatically resolve System-as-Root (SAR) vs Non-SAR system paths
-if [ -d "$WORK_DIR/system/system/framework" ]; then
-    SYSTEM_DIR="$WORK_DIR/system/system"
-else
-    SYSTEM_DIR="$WORK_DIR/system"
+PATCHED=false
+
+LOG "- Applying Framework & HAL Translation Patches for One UI 8..."
+
+# 1. Biometrics HAL Downgrade (Face V3.0 -> V2.0)
+if [ ! -f "$WORK_DIR/vendor/bin/hw/vendor.samsung.hardware.biometrics.face@3.0-service" ]; then
+    PATCHED=true
+    LOG "- Downgrading ISehBiometricsFace from V3.0 to V2.0 in services.jar"
+    SMALI_PATCH "system" "system/framework/services.jar" \
+        "smali/com/android/server/biometrics/sensors/face/hidl/HidlToAidlCallbackConverter.smali" "replaceall" \
+        "V3_0" \
+        "V2_0" \
+        > /dev/null
+    SMALI_PATCH "system" "system/framework/services.jar" \
+        "smali/com/android/server/biometrics/sensors/face/hidl/TestHal.smali" "replaceall" \
+        "V3_0" \
+        "V2_0" \
+        > /dev/null
+    SMALI_PATCH "system" "system/framework/services.jar" \
+        "smali/com/android/server/biometrics/sensors/face/aidl/SemFaceServiceExImpl\$\$ExternalSyntheticLambda6.smali" "remove"
+    EVAL "rm -f \"$APKTOOL_DIR/system/framework/services.jar/smali_classes2/vendor/samsung/hardware/biometrics/face/V3_0/ISehBiometricsFace.smali\""
+    EVAL "rm -f \"$APKTOOL_DIR/system/framework/services.jar/smali_classes2/vendor/samsung/hardware/biometrics/face/V3_0/ISehBiometricsFace\\\$Proxy.smali\""
 fi
 
-VENDOR_DIR="$WORK_DIR/vendor"
-
-echo "Applying Framework & HAL Translation Patches for One UI 8..."
-
-# 1. Biometrics HAL Downgrade (services.jar)
-echo "Patching services.jar for legacy Biometrics V2.0..."
-# Decompile, patch the HAL expectation, and recompile
-java -jar baksmali.jar d $SYSTEM_DIR/framework/services.jar -o smali_out
-# Downgrade ISehBiometricsFace from V3.0 to V2.0
-find smali_out -name "*.smali" -exec sed -i 's/vendor.samsung.hardware.biometrics.face-V3.0/vendor.samsung.hardware.biometrics.face-V2.0/g' {} +
-java -jar smali.jar a smali_out -o $SYSTEM_DIR/framework/services.jar.dex
-rm -rf smali_out
-
 # 2. Legacy OMX Video Codec Fallback (libstagefright.so)
-echo "Hex-patching libstagefright.so for Exynos legacy OMX..."
-# Swaps strict API 36 hardware encoding checks with NOP (No Operation) to allow older Exynos codecs
-# (Example ARM64 NOP instruction: \x1f\x20\x03\xd5)
-sed -i 's/\x1f\x01\x09\x6b\xe0\x01\x00\x54/\x1f\x20\x03\xd5\x1f\x20\x03\xd5/g' $SYSTEM_DIR/lib64/libstagefright.so
-sed -i 's/\x1f\x01\x09\x6b\xe0\x01\x00\x54/\x1f\x20\x03\xd5\x1f\x20\x03\xd5/g' $SYSTEM_DIR/lib/libstagefright.so
+if xxd -p -c 0 "$WORK_DIR/system/system/lib64/libstagefright.so" | grep -q "70690594205100347a9a40f9"; then
+    PATCHED=true
+    LOG "- Hex-patching libstagefright.so for legacy Exynos OMX"
+    HEX_PATCH "$WORK_DIR/system/system/lib64/libstagefright.so" \
+        "70690594205100347a9a40f9" "706905941f2003d57a9a40f9"
+elif xxd -p -c 0 "$WORK_DIR/system/system/lib64/libstagefright.so" | grep -q "864d0594604d00347a9a40f9"; then
+    PATCHED=true
+    LOG "- Hex-patching libstagefright.so for legacy Exynos OMX"
+    HEX_PATCH "$WORK_DIR/system/system/lib64/libstagefright.so" \
+        "864d0594604d00347a9a40f9" "864d05941f2003d57a9a40f9"
+fi
 
 # 3. Network BPF Bypass (netd)
-echo "Patching netd to bypass strict framework eBPF checks..."
-# Silences framework panic if it detects legacy network routing
-sed -i 's/\xoriginal_bpf_hex_string/\x1f\x20\x03\xd5/g' $SYSTEM_DIR/bin/netd
+if [ -f "$WORK_DIR/system/system/bin/netd" ]; then
+    if xxd -p -c 0 "$WORK_DIR/system/system/bin/netd" | grep -q "1f01096be0010054"; then
+        PATCHED=true
+        LOG "- Patching netd to bypass strict eBPF checks"
+        HEX_PATCH "$WORK_DIR/system/system/bin/netd" "1f01096be0010054" "1f01096b1f2003d5"
+    fi
+fi
 
 # 4. SurfaceFlinger & Hardware Props
-echo "Injecting display and NFC translation props..."
-# Disable modern content detection for refresh rate (prevents UI stutter on legacy display driver)
-echo "debug.sf.use_content_detection_for_refresh_rate=0" >> $VENDOR_DIR/build.prop
-# Route modern NFC calls to legacy Samsung NFC Adapter
-echo "ro.vendor.nfc.support.legacy=true" >> $VENDOR_DIR/build.prop
+if [ -f "$WORK_DIR/vendor/build.prop" ]; then
+    PATCHED=true
+    LOG "- Injecting display and NFC translation props"
+    EVAL "sed -i \"/ro.surface_flinger.use_content_detection_for_refresh_rate/d\" \"$WORK_DIR/vendor/build.prop\""
+    EVAL "sed -i \"\$a debug.sf.use_content_detection_for_refresh_rate=0\" \"$WORK_DIR/vendor/build.prop\""
+    EVAL "sed -i \"\$a ro.vendor.nfc.support.legacy=true\" \"$WORK_DIR/vendor/build.prop\""
+fi
 
 # 5. Camera NPU Model Swaps
-echo "Swapping heavy NPU models for BanetLite..."
-# Replaces One UI 8 heavy Portrait/Single Take models with legacy-compatible ones
-cp -f tools/legacy_models/BanetLite.snf $SYSTEM_DIR/cameradata/HumanInsSeg.snf
-cp -f tools/legacy_models/BanetLite.snf $SYSTEM_DIR/cameradata/SingleTake.snf
+if grep -q "default_lowtier" "$WORK_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json" &&
+        [ -f "$WORK_DIR/system/system/cameradata/portrait_data/SRIB_HumanInsSeg_FP16_V008.snf" ]; then
+    PATCHED=true
+    LOG "- Swapping heavy NPU models for BanetLite"
+    DELETE_FROM_WORK_DIR "system" "system/cameradata/portrait_data/SRIB_HumanInsSeg_FP16_V008.snf"
+    ADD_TO_WORK_DIR "a17xxx" "system" \
+        "system/cameradata/portrait_data/SRIB_BanetLite_FP16_V400.snf" 0 0 644 "u:object_r:system_file:s0"
+    EVAL "sed -i \"0,/HumanInsSeg_FP16_V008/s//BanetLite_FP16_V400/\" \"$WORK_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json\""
+    EVAL "sed -i \"0,/008/s//400/\" \"$WORK_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json\""
+fi
 
-echo "Framework patching complete. Ready for platform patch to inject custom kernel."
+if ! $PATCHED; then
+    LOG "\033[0;33m! Nothing to do\033[0m"
+fi
+
+unset PATCHED
