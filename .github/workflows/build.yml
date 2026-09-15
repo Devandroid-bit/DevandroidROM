@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           submodules: 'recursive'
 
@@ -50,29 +50,25 @@ jobs:
           echo -n "${{ secrets.PLATFORM_KEY_PEM }}" | base64 --decode > security/extremerom_platform.x509.pem
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
           cache: 'gradle'
 
-      - name: Install baksmali
+      - name: Install baksmali globally and locally
         run: |
-          git clone --depth=1 --branch v2.5.2 \
-            https://github.com/JesusFreke/smali.git \
-            /tmp/smali
+          curl -sL "https://github.com/JesusFreke/smali/releases/download/v2.5.2/baksmali-2.5.2.jar" -o /usr/local/bin/baksmali.jar
+          
+          # Wrapper for global CLI calls
+          echo '#!/bin/sh' > /usr/local/bin/baksmali
+          echo 'exec java -jar /usr/local/bin/baksmali.jar "$@"' >> /usr/local/bin/baksmali
+          chmod +x /usr/local/bin/baksmali /usr/local/bin/baksmali.jar
 
-          cd /tmp/smali
+          # Copy to workspace root in case a script references $GITHUB_WORKSPACE/baksmali.jar
+          cp /usr/local/bin/baksmali.jar "$GITHUB_WORKSPACE/baksmali.jar"
 
-          ./gradlew :baksmali:fatJar
-
-          cp baksmali/build/libs/baksmali-*-fat.jar \
-            "$GITHUB_WORKSPACE/baksmali.jar"
-
-          echo "baksmali installed:"
-          ls -lh "$GITHUB_WORKSPACE/baksmali.jar"
-
-          java -jar "$GITHUB_WORKSPACE/baksmali.jar" --version
+          baksmali --version
           
       - name: Fix script permissions
         run: |
