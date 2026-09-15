@@ -1,0 +1,38 @@
+name: Rollback repo
+
+on:
+  # Manual trigger from the GitHub Actions tab
+  workflow_dispatch: 
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    
+    # Crucial permission required to allow the bot to force push
+    permissions:
+      contents: write 
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so the target commit is found
+          fetch-depth: 0 
+
+      - name: Configure Git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Hard reset to target commit and force push
+        run: |
+          # Extract the name of the branch you triggered the action from
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          
+          echo "Rolling back branch: $BRANCH_NAME"
+          
+          # Force the local branch to exactly match the target commit state
+          git reset --hard eba992bd769ba9270003422801f461e6ada30a6d
+          
+          # Force push this older state back to the remote branch
+          # WARNING: This rewrites remote history and discards newer commits
+          git push origin $BRANCH_NAME --force
