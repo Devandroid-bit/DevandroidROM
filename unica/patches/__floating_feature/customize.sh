@@ -139,17 +139,22 @@ SEC_FLOATING_FEATURE_LCD_CONFIG_VIVIDPLUS=0
 APPLY_TARGET_FEATURE()
 {
     local TARGET_FIRMWARE_PATH
-    
-    # FIX: Identical robust path calculation as the fixed saiv_api patch
     TARGET_FIRMWARE_PATH="$(echo -n "$TARGET_FIRMWARE" | sed 's./._.g' | rev | cut -d "_" -f2- | rev)"
 
     local SOURCE_FILE="$WORK_DIR/system/system/etc/floating_feature.xml"
     local TARGET_FILE="$FW_DIR/$TARGET_FIRMWARE_PATH/system/system/etc/floating_feature.xml"
 
-    # FIX: Safe-guard to prevent the script from crashing if the TARGET_FILE doesn't exist
+    LOG "DEBUG TARGET_FIRMWARE=[$TARGET_FIRMWARE] TARGET_FIRMWARE_PATH=[$TARGET_FIRMWARE_PATH] TARGET_FILE=[$TARGET_FILE]"
+
+    # Fail loud instead of silent: a missing file here previously died with
+    # exit 1 and no explanation. This pinpoints which file, which resolved
+    # path, and confirms/denies a firmware-resolution problem in one line
+    # instead of leaving it ambiguous.
+    if [ ! -f "$SOURCE_FILE" ]; then
+        ABORT "floating_feature.xml missing at SOURCE_FILE=$SOURCE_FILE (work dir system partition not populated yet?)"
+    fi
     if [ ! -f "$TARGET_FILE" ]; then
-        LOG "!! TARGET_FILE missing at $TARGET_FILE, skipping target features comparison"
-        return 0
+        ABORT "floating_feature.xml missing at TARGET_FILE=$TARGET_FILE (TARGET_FIRMWARE_PATH resolved to '$TARGET_FIRMWARE_PATH' from TARGET_FIRMWARE='$TARGET_FIRMWARE' -- check this matches your extracted out/fw folder name, and whether target's system partition was extracted at all)"
     fi
 
     local FEATURE
