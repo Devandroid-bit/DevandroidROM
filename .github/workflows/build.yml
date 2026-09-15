@@ -56,6 +56,27 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
+      - name: Install baksmali
+        run: |
+          BAKSMALI_VERSION="2.5.2"
+          BAKSMALI_URL="https://repo1.maven.org/maven2/org/smali/baksmali/${BAKSMALI_VERSION}/baksmali-${BAKSMALI_VERSION}.jar"
+
+          echo "Downloading baksmali ${BAKSMALI_VERSION}..."
+
+          curl \
+            --fail \
+            --location \
+            --retry 5 \
+            --retry-delay 3 \
+            --retry-all-errors \
+            --output baksmali.jar \
+            "$BAKSMALI_URL"
+
+          echo "baksmali installed:"
+          ls -lh baksmali.jar
+
+          java -jar baksmali.jar --version
+
       - name: Fix script permissions
         run: |
           echo "Fixing permissions for all shell scripts..."
