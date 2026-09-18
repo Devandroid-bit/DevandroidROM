@@ -1,0 +1,4 @@
+id=snap_stub
+name=SNAP AIDL service stub
+author=Devandroid-bit
+description=Registers a minimal stub for vendor.samsung.hardware.snap.ISehSnap so waitForService() no longer hangs forever when the real snap-service binary fails to link, fixing the Photo Editor segmentation ANR.
