@@ -1,2 +1,3 @@
-/vendor/bin/snap_stub                       u:object_r:hal_snap_stub_exec:s0
-/vendor/etc/init/vendor\.snap_stub\.rc      u:object_r:vendor_configs_file:s0
+/vendor u:object_r:vendor_file:s0
+/vendor/bin/snap_stub u:object_r:hal_snap_stub_exec:s0
+/vendor/etc/init/vendor\.snap_stub\.rc u:object_r:vendor_configs_file:s0
