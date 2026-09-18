@@ -1,55 +1,77 @@
 // snap_stub.cpp
-// Minimal stub for the vendor.samsung.hardware.snap.ISehSnap AIDL service.
-// Purpose: register under the exact interface name the real snap service
-// uses, so AServiceManager_waitForService() unblocks immediately instead of
-// hanging forever (the real snap-service binary fails to link on this ROM).
-// This stub does NOT implement any real snap functionality. Any actual
-// call into it fails fast with an error -- that is the desired behavior:
-// callers get an error instead of freezing the calling thread forever.
+// Minimal stub for vendor.samsung.hardware.snap.ISehSnap.
+//
+// AServiceManager_* / ABinderProcess_* are intentionally excluded from
+// the redistributable NDK's link stub (marked "# apex" in libbinder_ndk's
+// linker version script -- reserved for platform/vendor builds done
+// inside the full AOSP tree). The real device's /system/lib64 (or
+// /apex/.../lib64) libbinder_ndk.so still exports them at runtime, so we
+// resolve them ourselves via dlopen/dlsym instead of linking at compile
+// time. This avoids both the missing-header and missing-symbol problems
+// at once. See https://github.com/android/ndk/issues/1304.
 
-#include <android/binder_ibinder.h>
-#include <android/binder_manager.h>
-#include <android/binder_process.h>
-#include <android/binder_status.h>
+#include <dlfcn.h>
+#include <cstdint>
+#include <cstdio>
 
-// Exact interface descriptor and instance name, confirmed from the
-// device's own vendor.samsung.hardware.snap-lazy.rc file.
+// Opaque types -- never dereferenced by our code, only passed around as
+// pointers, so a forward declaration keeps the ABI identical to the real
+// headers without needing to include them.
+struct AIBinder;
+struct AIBinder_Class;
+
+typedef int32_t binder_status_t;
+typedef void* (*OnCreate)(void* args);
+typedef void (*OnDestroy)(void* userData);
+typedef binder_status_t (*OnTransact)(AIBinder*, uint32_t, const void*, void*);
+
+typedef AIBinder_Class* (*fn_ClassDefine)(const char*, OnCreate, OnDestroy, OnTransact);
+typedef AIBinder* (*fn_BinderNew)(const AIBinder_Class*, void*);
+typedef binder_status_t (*fn_AddService)(AIBinder*, const char*);
+typedef void (*fn_SetThreadPoolMax)(uint32_t);
+typedef void (*fn_StartThreadPool)();
+typedef void (*fn_JoinThreadPool)();
+
 static const char* kInterfaceDescriptor = "vendor.samsung.hardware.snap.ISehSnap";
 static const char* kInstanceName = "vendor.samsung.hardware.snap.ISehSnap/default";
 
-// Called for every incoming Binder transaction. We never implement any
-// real transaction; we simply refuse it cleanly and immediately.
-static binder_status_t onTransact(AIBinder* /*binder*/,
-                                   transaction_code_t /*code*/,
-                                   const AParcel* /*in*/,
-                                   AParcel* /*out*/) {
-    return STATUS_UNKNOWN_TRANSACTION;  // fail fast, never hang the caller
+// Fails fast on every real call instead of hanging the caller.
+static binder_status_t onTransact(AIBinder*, uint32_t, const void*, void*) {
+    return -1;  // any non-zero status_t reads as "not OK" to callers
 }
-
-// Binder class lifecycle hooks -- no per-instance state needed for a stub.
 static void* onCreate(void* args) { return args; }
-static void onDestroy(void* /*userData*/) {}
+static void onDestroy(void*) {}
 
 int main() {
-    // Define a minimal Binder class using the real interface's descriptor.
-    AIBinder_Class* binderClass = AIBinder_Class_define(
-        kInterfaceDescriptor, onCreate, onDestroy, onTransact);
-
-    // Create the Binder object and register it under the exact instance
-    // name that waitForService() callers are looking for.
-    AIBinder* binder = AIBinder_new(binderClass, nullptr /*args*/);
-    binder_status_t status = AServiceManager_addService(binder, kInstanceName);
-    if (status != STATUS_OK) {
-        // Registration failed; exit so init sees the failure and can retry
-        // per its .rc policy instead of silently doing nothing.
+    void* lib = dlopen("libbinder_ndk.so", RTLD_NOW);
+    if (!lib) {
+        fprintf(stderr, "snap_stub: dlopen failed: %s\n", dlerror());
         return 1;
     }
 
-    // Stay alive forever, answering Binder calls (with onTransact's fast
-    // failure) so the service is always present once started.
-    ABinderProcess_setThreadPoolMaxThreadCount(0);
-    ABinderProcess_startThreadPool();
-    ABinderProcess_joinThreadPool();  // never returns
+    auto classDefine = (fn_ClassDefine)dlsym(lib, "AIBinder_Class_define");
+    auto binderNew = (fn_BinderNew)dlsym(lib, "AIBinder_new");
+    auto addService = (fn_AddService)dlsym(lib, "AServiceManager_addService");
+    auto setMax = (fn_SetThreadPoolMax)dlsym(lib, "ABinderProcess_setThreadPoolMaxThreadCount");
+    auto startPool = (fn_StartThreadPool)dlsym(lib, "ABinderProcess_startThreadPool");
+    auto joinPool = (fn_JoinThreadPool)dlsym(lib, "ABinderProcess_joinThreadPool");
 
+    if (!classDefine || !binderNew || !addService || !setMax || !startPool || !joinPool) {
+        fprintf(stderr, "snap_stub: dlsym failed for one or more symbols\n");
+        return 1;
+    }
+
+    AIBinder_Class* cls = classDefine(kInterfaceDescriptor, onCreate, onDestroy, onTransact);
+    AIBinder* binder = binderNew(cls, nullptr);
+
+    binder_status_t status = addService(binder, kInstanceName);
+    if (status != 0) {  // 0 == STATUS_OK
+        fprintf(stderr, "snap_stub: addService failed: %d\n", status);
+        return 1;
+    }
+
+    setMax(0);
+    startPool();
+    joinPool();  // never returns
     return 0;
 }
