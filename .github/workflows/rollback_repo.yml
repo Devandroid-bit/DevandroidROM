@@ -31,7 +31,7 @@ jobs:
           echo "Rolling back branch: $BRANCH_NAME"
           
           # Force the local branch to exactly match the target commit state
-          git reset --hard da75a4e5b11aa182e38f1543fd991750078dac06
+          git reset --hard 26f3174b445bf7dd26920d1c858bbb0047f8d6c2
           
           # Force push this older state back to the remote branch
           # WARNING: This rewrites remote history and discards newer commits
