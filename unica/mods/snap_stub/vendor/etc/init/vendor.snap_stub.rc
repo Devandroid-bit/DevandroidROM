@@ -1,0 +1,9 @@
+# Always-on stub for vendor.samsung.hardware.snap.ISehSnap.
+# Deliberately NOT a lazy "interface aidl" service: it must already be
+# registered and running before any client calls waitForService(),
+# not started on-demand by it (that on-demand path is exactly what is
+# broken today -- it tries to start the real, non-linking binary).
+service vendor.snap_stub /vendor/bin/snap_stub
+    class hal
+    user system
+    group system
