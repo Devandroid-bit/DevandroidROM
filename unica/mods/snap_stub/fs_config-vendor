@@ -1,2 +1,0 @@
-vendor/bin/snap_stub 0 0 0755 capabilities=0x0
-vendor/etc/init/vendor.snap_stub.rc 0 0 0644 capabilities=0x0
