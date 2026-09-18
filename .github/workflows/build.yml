@@ -102,28 +102,6 @@ jobs:
           sudo mkswap /swapfile
           sudo swapon /swapfile
           sudo swapon --show
-
-      - name: Cache NDK
-        uses: actions/cache@v4
-        with:
-          path: android-ndk-r27
-          key: ndk-r27-linux
-
-      - name: Setup NDK
-        run: |
-          if [ ! -d android-ndk-r27 ]; then
-            curl -sSL -o ndk.zip https://dl.google.com/android/repository/android-ndk-r27-linux.zip
-            unzip -q ndk.zip
-          fi
-
-      - name: Build snap stub
-        run: |
-          NDK=$PWD/android-ndk-r27
-          mkdir -p unica/mods/snap_stub/vendor/bin
-          $NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang++ \
-            -o unica/mods/snap_stub/vendor/bin/snap_stub \
-            unica/mods/snap_stub/src/snap_stub.cpp \
-            -ldl -static-libstdc++
       
       - name: Build ROM
         run: |
