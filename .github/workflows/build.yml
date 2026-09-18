@@ -123,8 +123,8 @@ jobs:
           $NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang++ \
             -o unica/mods/snap_stub/vendor/bin/snap_stub \
             unica/mods/snap_stub/src/snap_stub.cpp \
-            -lbinder_ndk -llog -static-libstdc++
-
+            -ldl -static-libstdc++
+      
       - name: Build ROM
         run: |
           source ./buildenv.sh ${{ matrix.target }}
