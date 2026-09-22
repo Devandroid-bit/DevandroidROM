@@ -1,4 +1,24 @@
 # [
+# Same defensive pattern used to fix SAIV and floating_feature: run in a
+# subshell so an internal `exit` only kills the subshell, log the failing
+# call, and never let a nonzero exit (including the very common
+# "value/key not found" case, which is not a real error) silently kill
+# the whole build via set -e.
+SAFE_ADD_TO_WORK_DIR() {
+    ( ADD_TO_WORK_DIR "$@" ) || LOG "!! ADD_TO_WORK_DIR failed, continuing anyway: $*"
+}
+SAFE_EVAL() {
+    ( EVAL "$1" ) || LOG "!! EVAL failed, continuing anyway: $1"
+}
+SAFE_GET_FLOATING_FEATURE_CONFIG() {
+    if [ "$#" -eq 2 ] && [ ! -f "$1" ]; then
+        LOG "!! floating_feature.xml missing at $1 (key: $2), treating as empty" >&2
+        return 0
+    fi
+    GET_FLOATING_FEATURE_CONFIG "$@" 2>/dev/null
+    return 0
+}
+
 _LOG() { if $DEBUG; then LOGW "$1"; else ABORT "$1"; fi }
 
 LOG_MISSING_PATCHES()
@@ -16,52 +36,25 @@ LOG_MISSING_PATCHES()
 SOURCE_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$SOURCE_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$SOURCE_FIRMWARE")"
 TARGET_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$TARGET_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$TARGET_FIRMWARE")"
 
-# Runs ADD_TO_WORK_DIR in a subshell so even an internal `exit` only kills the
-# subshell, not the whole build. Logs the exact failing call instead of
-# aborting, matching the working SAIV patch pattern.
-SAFE_ADD_TO_WORK_DIR() {
-    ( ADD_TO_WORK_DIR "$@" ) || LOG "!! ADD_TO_WORK_DIR failed, continuing anyway: $*"
-}
-
-# Copy a file from the ROM source tree directly into WORK_DIR.
-# These files are not firmware-extracted files, so ADD_TO_WORK_DIR cannot be
-# used for them. Keep the copy outside EVAL: EVAL may terminate the current
-# customization context on failure.
-SAFE_COPY_TO_WORK_DIR() {
-    local SOURCE_PATH="$1"
-    local DEST_PATH="$2"
-
-    cp -a "$SOURCE_PATH" "$DEST_PATH" || {
-        LOG "!! Failed to copy: $SOURCE_PATH -> $DEST_PATH"
-        return 1
-    }
-}
-
 DELETE_FROM_WORK_DIR "system" "system/cameradata/portrait_data"
 SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" "system" "system/cameradata/portrait_data" 0 0 755 "u:object_r:system_file:s0"
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml" ]; then
     LOG "- Adding /system/system/cameradata/singletake/service-feature.xml"
-    SAFE_COPY_TO_WORK_DIR \
-        "$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml" \
-        "$WORK_DIR/system/system/cameradata/singletake/service-feature.xml"
+    SAFE_EVAL "cp -a \"$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml\" \"$WORK_DIR/system/system/cameradata/singletake/service-feature.xml\""
 else
     SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" \
         "system" "system/cameradata/singletake/service-feature.xml" 0 0 644 "u:object_r:system_file:s0"
 fi
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/aremoji-feature.xml" ]; then
     LOG "- Adding /system/system/cameradata/aremoji-feature.xml"
-    SAFE_COPY_TO_WORK_DIR \
-        "$SRC_DIR/target/$TARGET_CODENAME/camera/aremoji-feature.xml" \
-        "$WORK_DIR/system/system/cameradata/aremoji-feature.xml"
+    SAFE_EVAL "cp -a \"$SRC_DIR/target/$TARGET_CODENAME/camera/aremoji-feature.xml\" \"$WORK_DIR/system/system/cameradata/aremoji-feature.xml\""
 else
     SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" \
         "system" "system/cameradata/aremoji-feature.xml" 0 0 644 "u:object_r:system_file:s0"
 fi
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/camera-feature.xml" ]; then
     LOG "- Adding /system/system/cameradata/camera-feature.xml"
-    SAFE_COPY_TO_WORK_DIR \
-        "$SRC_DIR/target/$TARGET_CODENAME/camera/camera-feature.xml" \
-        "$WORK_DIR/system/system/cameradata/camera-feature.xml"
+    SAFE_EVAL "cp -a \"$SRC_DIR/target/$TARGET_CODENAME/camera/camera-feature.xml\" \"$WORK_DIR/system/system/cameradata/camera-feature.xml\""
 elif [[ "$SOURCE_API_LEVEL" == "$TARGET_API_LEVEL" ]]; then
     SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" \
         "system" "system/cameradata/camera-feature.xml" 0 0 644 "u:object_r:system_file:s0"
@@ -74,7 +67,7 @@ if grep -q "DURING_SMARTVIEW" "$WORK_DIR/system/system/cameradata/camera-feature
     LOG "- Removing Smart View limitations flags"
     SAFE_EVAL "sed -i \"/DURING_SMARTVIEW/d\" \"$WORK_DIR/system/system/cameradata/camera-feature.xml\""
 fi
-if [ "$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_GRAPHICS_SUPPORT_3D_SURFACE_TRANSITION_FLAG")" ]; then
+if [ "$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_GRAPHICS_SUPPORT_3D_SURFACE_TRANSITION_FLAG")" ]; then
     if grep -q "SUPPORT_LIVE_BLUR" "$WORK_DIR/system/system/cameradata/camera-feature.xml" 2> /dev/null; then
         LOG "- Removing native blur disable flag"
         SAFE_EVAL "sed -i \"/SUPPORT_LIVE_BLUR/d\" \"$WORK_DIR/system/system/cameradata/camera-feature.xml\""
@@ -120,8 +113,8 @@ elif ! grep -q "SUPPORT_SINGLE_TAKE_HIGHLIGHT_VIDEOS.*true" "$FW_DIR/$SOURCE_FIR
 fi
 
 # SEC_PRODUCT_FEATURE_CAMERA_CONFIG_ACTION_CLASSIFIER
-SOURCE_CAMERA_CONFIG_ACTION_CLASSIFIER="$(GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_CAMERA_CONFIG_ACTION_CLASSIFIER")"
-TARGET_CAMERA_CONFIG_ACTION_CLASSIFIER="$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_CONFIG_ACTION_CLASSIFIER")"
+SOURCE_CAMERA_CONFIG_ACTION_CLASSIFIER="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_CAMERA_CONFIG_ACTION_CLASSIFIER")"
+TARGET_CAMERA_CONFIG_ACTION_CLASSIFIER="$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_CONFIG_ACTION_CLASSIFIER")"
 if [ "$SOURCE_CAMERA_CONFIG_ACTION_CLASSIFIER" ]; then
     if [ "$TARGET_CAMERA_CONFIG_ACTION_CLASSIFIER" ]; then
         if [ -d "$WORK_DIR/vendor/etc/singletake/dynamic_viewing" ]; then
@@ -140,8 +133,8 @@ else
 fi
 
 # SEC_PRODUCT_FEATURE_CAMERA_CONFIG_GPPM_SOLUTIONS
-SOURCE_CAMERA_CONFIG_GPPM_SOLUTIONS="$(GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_CAMERA_CONFIG_GPPM_SOLUTIONS")"
-TARGET_CAMERA_CONFIG_GPPM_SOLUTIONS="$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_CONFIG_GPPM_SOLUTIONS")"
+SOURCE_CAMERA_CONFIG_GPPM_SOLUTIONS="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_CAMERA_CONFIG_GPPM_SOLUTIONS")"
+TARGET_CAMERA_CONFIG_GPPM_SOLUTIONS="$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_CONFIG_GPPM_SOLUTIONS")"
 if [[ "$SOURCE_CAMERA_CONFIG_GPPM_SOLUTIONS" != "$TARGET_CAMERA_CONFIG_GPPM_SOLUTIONS" ]]; then
     if [ "$SOURCE_CAMERA_CONFIG_GPPM_SOLUTIONS" ]; then
         if [ ! "$TARGET_CAMERA_CONFIG_GPPM_SOLUTIONS" ] && \
@@ -207,8 +200,8 @@ else
 fi
 
 # SEC_PRODUCT_FEATURE_GALLERY_CONFIG_PET_CLUSTER_VERSION
-SOURCE_GALLERY_CONFIG_PET_CLUSTER_VERSION="$(GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_GALLERY_CONFIG_PET_CLUSTER_VERSION")"
-TARGET_GALLERY_CONFIG_PET_CLUSTER_VERSION="$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_GALLERY_CONFIG_PET_CLUSTER_VERSION")"
+SOURCE_GALLERY_CONFIG_PET_CLUSTER_VERSION="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_GALLERY_CONFIG_PET_CLUSTER_VERSION")"
+TARGET_GALLERY_CONFIG_PET_CLUSTER_VERSION="$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_GALLERY_CONFIG_PET_CLUSTER_VERSION")"
 if [[ "$SOURCE_GALLERY_CONFIG_PET_CLUSTER_VERSION" != "None" ]]; then
     if [[ "$TARGET_GALLERY_CONFIG_PET_CLUSTER_VERSION" == "None" ]]; then
         DELETE_FROM_WORK_DIR "system" "system/etc/default-permissions/default-permissions-com.samsung.petservice.xml"
@@ -224,8 +217,8 @@ else
 fi
 
 # SEC_PRODUCT_FEATURE_SAIV_CONFIG_ARDOODLE_LIB
-SOURCE_SAIV_CONFIG_ARDOODLE_LIB="$(GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_SAIV_CONFIG_ARDOODLE_LIB")"
-TARGET_SAIV_CONFIG_ARDOODLE_LIB="$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_SAIV_CONFIG_ARDOODLE_LIB")"
+SOURCE_SAIV_CONFIG_ARDOODLE_LIB="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_SAIV_CONFIG_ARDOODLE_LIB")"
+TARGET_SAIV_CONFIG_ARDOODLE_LIB="$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_SAIV_CONFIG_ARDOODLE_LIB")"
 if [[ "$SOURCE_SAIV_CONFIG_ARDOODLE_LIB" != "$TARGET_SAIV_CONFIG_ARDOODLE_LIB" ]]; then
     if [ "$SOURCE_SAIV_CONFIG_ARDOODLE_LIB" ]; then
         if [[ "$SOURCE_SAIV_CONFIG_ARDOODLE_LIB" == *"IMG_PICKING"* ]] && \
@@ -255,8 +248,8 @@ fi
 if ! grep -q "SUPPORT_SINGLE_TAKE_BURST_CAPTURE.*true" "$WORK_DIR/system/system/cameradata/camera-feature.xml" 2> /dev/null; then
     DELETE_FROM_WORK_DIR "system" "system/lib64/libBestPhoto.camera.samsung.so"
 fi
-SOURCE_CAMERA_CONFIG_VENDOR_LIB_INFO="$(GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_CAMERA_CONFIG_VENDOR_LIB_INFO")"
-TARGET_CAMERA_CONFIG_VENDOR_LIB_INFO="$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_CONFIG_VENDOR_LIB_INFO")"
+SOURCE_CAMERA_CONFIG_VENDOR_LIB_INFO="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml" "SEC_FLOATING_FEATURE_CAMERA_CONFIG_VENDOR_LIB_INFO")"
+TARGET_CAMERA_CONFIG_VENDOR_LIB_INFO="$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_CONFIG_VENDOR_LIB_INFO")"
 if [[ "$SOURCE_CAMERA_CONFIG_VENDOR_LIB_INFO" == *"aebhdr.arcsoft.v1"* ]] && \
         [[ "$TARGET_CAMERA_CONFIG_VENDOR_LIB_INFO" != *"aebhdr.arcsoft.v1"* ]]; then
     DELETE_FROM_WORK_DIR "system" "system/lib64/libAEBHDR_wrapper.camera.samsung.so"
@@ -327,8 +320,8 @@ if [[ "$SOURCE_CAMERA_CONFIG_VENDOR_LIB_INFO" == *"super_resolution_raw.arcsoft"
     DELETE_FROM_WORK_DIR "system" "system/lib64/libsuperresolutionraw_wrapper_v2.camera.samsung.so"
     DELETE_FROM_WORK_DIR "system" "system/lib64/libsuperresolution_raw.arcsoft.so"
 fi
-SOURCE_CAMERA_DOCUMENTSCAN_SOLUTIONS="$(GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml"  "SEC_FLOATING_FEATURE_CAMERA_DOCUMENTSCAN_SOLUTIONS")"
-TARGET_CAMERA_DOCUMENTSCAN_SOLUTIONS="$(GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_DOCUMENTSCAN_SOLUTIONS")"
+SOURCE_CAMERA_DOCUMENTSCAN_SOLUTIONS="$(SAFE_GET_FLOATING_FEATURE_CONFIG "$FW_DIR/$SOURCE_FIRMWARE_PATH/system/system/etc/floating_feature.xml"  "SEC_FLOATING_FEATURE_CAMERA_DOCUMENTSCAN_SOLUTIONS")"
+TARGET_CAMERA_DOCUMENTSCAN_SOLUTIONS="$(SAFE_GET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_CAMERA_DOCUMENTSCAN_SOLUTIONS")"
 if [[ "$SOURCE_CAMERA_DOCUMENTSCAN_SOLUTIONS" == *"AI_DEWARPING"* ]] && \
         [[ "$TARGET_CAMERA_DOCUMENTSCAN_SOLUTIONS" != *"AI_DEWARPING"* ]]; then
     DELETE_FROM_WORK_DIR "system" "system/lib64/libDeepDocRectify.camera.samsung.so"
@@ -413,7 +406,7 @@ if [ ! "$(find "$WORK_DIR/product/overlay" -maxdepth 1 -type f -name "SystemUI*"
         else
             LOG "- Disabling camera cutout protection"
         fi
-        EVAL "sed -i \"s/config_enableDisplayCutoutProtection\\\">$SOURCE_CAMERA_SUPPORT_CUTOUT_PROTECTION/config_enableDisplayCutoutProtection\\\">$TARGET_CAMERA_SUPPORT_CUTOUT_PROTECTION/\" \"$APKTOOL_DIR/system_ext/priv-app/SystemUI/SystemUI.apk/res/values/bools.xml\""
+        SAFE_EVAL "sed -i \"s/config_enableDisplayCutoutProtection\\\">$SOURCE_CAMERA_SUPPORT_CUTOUT_PROTECTION/config_enableDisplayCutoutProtection\\\">$TARGET_CAMERA_SUPPORT_CUTOUT_PROTECTION/\" \"$APKTOOL_DIR/system_ext/priv-app/SystemUI/SystemUI.apk/res/values/bools.xml\""
     fi
 fi
 
@@ -424,5 +417,4 @@ unset SOURCE_FIRMWARE_PATH TARGET_FIRMWARE_PATH \
     SOURCE_SAIV_CONFIG_ARDOODLE_LIB TARGET_SAIV_CONFIG_ARDOODLE_LIB \
     SOURCE_CAMERA_CONFIG_VENDOR_LIB_INFO TARGET_CAMERA_CONFIG_VENDOR_LIB_INFO \
     SOURCE_CAMERA_DOCUMENTSCAN_SOLUTIONS TARGET_CAMERA_DOCUMENTSCAN_SOLUTIONS
-unset -f _LOG LOG_MISSING_PATCHES
-unset -f SAFE_EVAL
+unset -f _LOG LOG_MISSING_PATCHES SAFE_ADD_TO_WORK_DIR SAFE_EVAL SAFE_GET_FLOATING_FEATURE_CONFIG
