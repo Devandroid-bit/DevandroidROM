@@ -97,8 +97,9 @@ jobs:
       - name: Rebase sixteen
         if: steps.changes.outputs.changed == 'true'
         run: |
-          git fetch origin sixteen
-          git rebase origin/sixteen
+          git fetch origin sixteen:refs/remotes/origin/sixteen
+          git rebase refs/remotes/origin/sixteen
+
 
       - name: Push changes to sixteen
         if: steps.changes.outputs.changed == 'true'
