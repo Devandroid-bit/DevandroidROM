@@ -1,0 +1,111 @@
+name: Import Donor Prebuilts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-donor-prebuilts
+  cancel-in-progress: false
+
+jobs:
+  import-targets:
+    name: Import r9qxxx and a73xqxx
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sixteen branch
+        uses: actions/checkout@v4
+        with:
+          ref: sixteen
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Clone source repository
+        run: |
+          git clone \
+            --depth=1 \
+            --branch sixteen \
+            https://github.com/salvogiangri/UN1CA.git \
+            source-repo
+
+      - name: Import prebuilts
+        run: |
+          set -e
+
+          DEVICES=("r9qxxx" "a73xqxx")
+
+          for DEVICE in "${DEVICES[@]}"; do
+            SOURCE_DIR="source-repo/prebuilts/samsung/$DEVICE"
+            DEST_DIR="prebuilts/samsung/$DEVICE"
+
+            if [ ! -d "$SOURCE_DIR" ]; then
+              echo "::error::Source directory does not exist: $SOURCE_DIR"
+              exit 1
+            fi
+
+            echo "Removing existing $DEST_DIR..."
+            rm -rf "$DEST_DIR"
+
+            echo "Creating destination directory for $DEVICE..."
+            mkdir -p "$DEST_DIR"
+
+            echo "Copying $DEST_DIR..."
+            rsync -a --delete "$SOURCE_DIR/" "$DEST_DIR/"
+
+            echo "$DEST_DIR imported successfully."
+          done
+
+      - name: Check imported files
+        run: |
+          echo "Target files:"
+          find target -type f 2>/dev/null | wc -l || echo "0"
+
+          echo "prebuilts/samsung/r9qxxx files:"
+          find prebuilts/samsung/r9qxxx -type f 2>/dev/null | wc -l || echo "0"
+
+          echo "prebuilts/samsung/a73xqxx files:"
+          find prebuilts/samsung/a73xqxx -type f 2>/dev/null | wc -l || echo "0"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git add -A prebuilts/samsung/r9qxxx prebuilts/samsung/a73xqxx
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changes detected."
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git commit \
+            -m "init prebuilts r9qxxx and a73xqxx" \
+               -m "Author and credits: UN1CA, @salvogiangri"
+
+      - name: Rebase sixteen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git fetch origin sixteen
+          git rebase origin/sixteen
+
+      - name: Push changes to sixteen
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git push --force-with-lease origin HEAD:sixteen
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -rf source-repo
