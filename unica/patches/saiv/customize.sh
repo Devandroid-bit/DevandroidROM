@@ -142,11 +142,11 @@ if [ -f "$WORK_DIR/system/system/priv-app/BixbyVisionFramework3.5/BixbyVisionFra
         if [ -d "$WORK_DIR/system/system/saiv/image_understanding/db/slens_classifier" ]; then
             DELETE_FROM_WORK_DIR "system" "system/saiv/image_understanding/db/slens_classifier"
         fi
-        SAFE_ADD_TO_WORK_DIR "gts11xx" "system" "system/saiv/image_understanding/db/slens_classifier/slens_classifier_cnn.sni" 0 0 644 "u:object_r:system_file:s0"
+        SAFE_ADD_TO_WORK_DIR "pa2qxxx" "system" "system/saiv/image_understanding/db/slens_classifier/slens_classifier_cnn.sni" 0 0 644 "u:object_r:system_file:s0"
         if [ -d "$WORK_DIR/vendor/etc/saiv/image_understanding/db/slens_classifier" ]; then
             DELETE_FROM_WORK_DIR "vendor" "etc/saiv/image_understanding/db/slens_classifier"
         fi
-        SAFE_ADD_TO_WORK_DIR "gts11xx" "vendor" "etc/saiv/image_understanding/db/slens_classifier/slens_classifier_cnn.tflite" 0 0 644 "u:object_r:vendor_configs_file:s0"
+        SAFE_ADD_TO_WORK_DIR "pa2qxxx" "vendor" "etc/saiv/image_understanding/db/slens_classifier/slens_classifier_cnn.tflite" 0 0 644 "u:object_r:vendor_configs_file:s0"
         if [ -d "$WORK_DIR/vendor/saiv/image_understanding/db/slens_classifier" ]; then
             DELETE_FROM_WORK_DIR "vendor" "saiv/image_understanding/db/slens_classifier"
         fi
@@ -156,11 +156,11 @@ if [ -f "$WORK_DIR/system/system/priv-app/BixbyVisionFramework3.5/BixbyVisionFra
         if [ -d "$WORK_DIR/system/system/saiv/image_understanding/db/slens_detector" ]; then
             DELETE_FROM_WORK_DIR "system" "system/saiv/image_understanding/db/slens_detector"
         fi
-        SAFE_ADD_TO_WORK_DIR "gts11xx" "system" "system/saiv/image_understanding/db/slens_detector/slens_detector_cnn.sni" 0 0 644 "u:object_r:system_file:s0"
+        SAFE_ADD_TO_WORK_DIR "pa2qxxx" "system" "system/saiv/image_understanding/db/slens_detector/slens_detector_cnn.sni" 0 0 644 "u:object_r:system_file:s0"
         if [ -d "$WORK_DIR/vendor/etc/saiv/image_understanding/db/slens_detector" ]; then
             DELETE_FROM_WORK_DIR "vendor" "etc/saiv/image_understanding/db/slens_detector"
         fi
-        SAFE_ADD_TO_WORK_DIR "gts11xx" "vendor" "etc/saiv/image_understanding/db/slens_detector/slens_detector_cnn.tflite" 0 0 644 "u:object_r:vendor_configs_file:s0"
+        SAFE_ADD_TO_WORK_DIR "pa2qxxx" "vendor" "etc/saiv/image_understanding/db/slens_detector/slens_detector_cnn.tflite" 0 0 644 "u:object_r:vendor_configs_file:s0"
         if [ -d "$WORK_DIR/vendor/saiv/image_understanding/db/slens_detector" ]; then
             DELETE_FROM_WORK_DIR "vendor" "saiv/image_understanding/db/slens_detector"
         fi
