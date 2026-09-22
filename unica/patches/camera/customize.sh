@@ -16,42 +16,52 @@ LOG_MISSING_PATCHES()
 SOURCE_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$SOURCE_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$SOURCE_FIRMWARE")"
 TARGET_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$TARGET_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$TARGET_FIRMWARE")"
 
-# Runs EVAL in a subshell so an internal `exit` only kills the subshell,
-# logs the failing command instead of dying, matching the SAIV fix pattern.
-# Only applied to the section that failed and the section that never got a
-# chance to run -- the two hex patches above already proved working in the
-# last build and are left untouched.
-SAFE_EVAL() {
-    ( EVAL "$1" ) || LOG "!! EVAL failed, continuing anyway: $1"
-}
-
 # Runs ADD_TO_WORK_DIR in a subshell so even an internal `exit` only kills the
 # subshell, not the whole build. Logs the exact failing call instead of
-# aborting, so the build finishes and the next run's log tells you precisely
-# which copy is dying.
+# aborting, matching the working SAIV patch pattern.
 SAFE_ADD_TO_WORK_DIR() {
     ( ADD_TO_WORK_DIR "$@" ) || LOG "!! ADD_TO_WORK_DIR failed, continuing anyway: $*"
+}
+
+# Copy a file from the ROM source tree directly into WORK_DIR.
+# These files are not firmware-extracted files, so ADD_TO_WORK_DIR cannot be
+# used for them. Keep the copy outside EVAL: EVAL may terminate the current
+# customization context on failure.
+SAFE_COPY_TO_WORK_DIR() {
+    local SOURCE_PATH="$1"
+    local DEST_PATH="$2"
+
+    cp -a "$SOURCE_PATH" "$DEST_PATH" || {
+        LOG "!! Failed to copy: $SOURCE_PATH -> $DEST_PATH"
+        return 1
+    }
 }
 
 DELETE_FROM_WORK_DIR "system" "system/cameradata/portrait_data"
 SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" "system" "system/cameradata/portrait_data" 0 0 755 "u:object_r:system_file:s0"
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml" ]; then
     LOG "- Adding /system/system/cameradata/singletake/service-feature.xml"
-    SAFE_EVAL "cp -a \"$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml\" \"$WORK_DIR/system/system/cameradata/singletake/service-feature.xml\""
+    SAFE_COPY_TO_WORK_DIR \
+        "$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml" \
+        "$WORK_DIR/system/system/cameradata/singletake/service-feature.xml"
 else
     SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" \
         "system" "system/cameradata/singletake/service-feature.xml" 0 0 644 "u:object_r:system_file:s0"
 fi
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/aremoji-feature.xml" ]; then
     LOG "- Adding /system/system/cameradata/aremoji-feature.xml"
-    SAFE_EVAL "cp -a \"$SRC_DIR/target/$TARGET_CODENAME/camera/aremoji-feature.xml\" \"$WORK_DIR/system/system/cameradata/aremoji-feature.xml\""
+    SAFE_COPY_TO_WORK_DIR \
+        "$SRC_DIR/target/$TARGET_CODENAME/camera/aremoji-feature.xml" \
+        "$WORK_DIR/system/system/cameradata/aremoji-feature.xml"
 else
     SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" \
         "system" "system/cameradata/aremoji-feature.xml" 0 0 644 "u:object_r:system_file:s0"
 fi
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/camera-feature.xml" ]; then
     LOG "- Adding /system/system/cameradata/camera-feature.xml"
-    SAFE_EVAL "cp -a \"$SRC_DIR/target/$TARGET_CODENAME/camera/camera-feature.xml\" \"$WORK_DIR/system/system/cameradata/camera-feature.xml\""
+    SAFE_COPY_TO_WORK_DIR \
+        "$SRC_DIR/target/$TARGET_CODENAME/camera/camera-feature.xml" \
+        "$WORK_DIR/system/system/cameradata/camera-feature.xml"
 elif [[ "$SOURCE_API_LEVEL" == "$TARGET_API_LEVEL" ]]; then
     SAFE_ADD_TO_WORK_DIR "$TARGET_FIRMWARE" \
         "system" "system/cameradata/camera-feature.xml" 0 0 644 "u:object_r:system_file:s0"
