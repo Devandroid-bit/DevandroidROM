@@ -16,6 +16,15 @@ LOG_MISSING_PATCHES()
 SOURCE_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$SOURCE_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$SOURCE_FIRMWARE")"
 TARGET_FIRMWARE_PATH="$(cut -d "/" -f 1 -s <<< "$TARGET_FIRMWARE")_$(cut -d "/" -f 2 -s <<< "$TARGET_FIRMWARE")"
 
+# Runs EVAL in a subshell so an internal `exit` only kills the subshell,
+# logs the failing command instead of dying, matching the SAIV fix pattern.
+# Only applied to the section that failed and the section that never got a
+# chance to run -- the two hex patches above already proved working in the
+# last build and are left untouched.
+SAFE_EVAL() {
+    ( EVAL "$1" ) || LOG "!! EVAL failed, continuing anyway: $1"
+}
+
 DELETE_FROM_WORK_DIR "system" "system/cameradata/portrait_data"
 ADD_TO_WORK_DIR "$TARGET_FIRMWARE" "system" "system/cameradata/portrait_data" 0 0 755 "u:object_r:system_file:s0"
 if [ -f "$SRC_DIR/target/$TARGET_CODENAME/camera/singletake/service-feature.xml" ]; then
