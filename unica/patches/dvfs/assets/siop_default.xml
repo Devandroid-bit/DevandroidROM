@@ -57,7 +57,7 @@
 
     <overheatcontrol>
         <complex>
-            <DEX formula="SKIN" temp="470" />
+            <DEX formula="LRP" temp="470" />
         </complex>
     </overheatcontrol>
     <modelsettings>
@@ -88,22 +88,21 @@
     <components>
 
         <component name="AP" tempType="SKIN" >
-            <limiter name="CPUFreqMax" step="1" temp="380"             value="-1"                   />
-            <limiter name="GPUFreqMax" step="1" temp="380"             value="-1"                   />
-            <limiter name="AppInstallDelay"     temp="400:420"         value="-1:10000"             />
-            <limiter name="DexOptCpuset"        temp="360"             value="-1:1"                 />
-            <limiter name="BackgroundCpuset"    temp="360"             value="-1:100:200:300"       />
-            <limiter name="TABoost"             temp="400"             value="-1:1"                 />
+            <limiter name="CPUFreqMax" step="1" temp="370" value="-1" />
+            <limiter name="GPUFreqMax" step="1" temp="370" value="-1" />
+            <limiter name="AppInstallDelay" temp="350:370" value="5000:10000" />
+            <limiter name="BackgroundCpuset" temp="360" value="-1:100:200:300" />
+            <limiter name="TABoost"      temp="400" value="-1:1" />
         </component>
 
-        <component name="CAM" tempType="SKIN" >
-            <limiter name="CameraAr"            temp="400:420:450:480"             value="-1:1:2:3"       />
-            <limiter name="CameraOverheatLevel" temp="350:370:390:410:430:450:460" value="-1:1:2:3:4:5:6" />
-            <limiter name="DualRecording"       temp="350"                         value="-1:1"           />
+        <component name="CAM" tempType="LRP" >
+            <limiter name="CameraAr"            temp="400:420:450:480" value="-1:1:2:3" />
+            <limiter name="CameraOverheatLevel" temp="350"             value="-1:1:2:3" />
+            <limiter name="DualRecording"       temp="350"             value="-1:1" />
         </component>
 
         <component name="CHG" tempType="SKIN">
-            <limiter name="Charging" temp="380" value="-1" />
+            <limiter name="Charging" temp="370" value="-1" />
         </component>
 
         <component name="CP" tempType="SKIN">
@@ -111,22 +110,23 @@
         </component>
 
         <component name="DISPLAY" tempType="SKIN">
-            <limiter name="Brightness"     temp="380"         value="-1"                     />
-            <limiter name="LimitHrr"       temp="530"         value="-1:1"                   />
-            <limiter name="AppCastDisable" temp="450:470:500" value="-1:1:1" delay="0:300:0" />
-            <limiter name="MultiWindow"    temp="450:470:500" value="-1:1:1" delay="0:300:0" />
+            <limiter name="Brightness" temp="370" value="-1" />
+            <limiter name="LimitHrr" temp="530" value="-1:1" />
         </component>
 
         <component name="WIFI" tempType="SKIN">
-            <limiter name="WifiTput"    tempType="SKIN" temp="450" p="50" i="2" d="50" unit="0.1" min="300" />
-            <limiter name="WifiP2pTput" tempType="SKIN" temp="450" p="50" i="2" d="50" unit="0.1" min="300"/>
-            <limiter name="WifiAwareTput" tempType="SKIN" temp="450" p="50" i="2" d="50" unit="0.1" min="300"/>
-            <limiter name="HotspotTput" tempType="SKIN" temp="450" p="50" i="2" d="50" unit="0.1" min="300"/>
-            <limiter name="SmartBonding"                temp="400" value="-1:1"                            />
+            <limiter name="WifiTput"     temp="370"             value="-1:50:30:10" />
+            <limiter name="WifiP2pTput"  temp="380:400:430:480" value="-1:300:200:50" />
+            <limiter name="HotspotTput"  temp="380:400:430:480" value="-1:300:200:50" />
+            <limiter name="SmartBonding" temp="400"             value="-1:1" />
         </component>
 
+        <component name="AP+DISPLAY" tempType="SKIN" >
+            <limiter name="AppInstallDelay" temp="300:320:340:370" value="-1:3000:5000:10000" />
+        </component>
+        
         <component name="CHG+DISPLAY" tempType="SKIN">
-            <limiter name="Charging" temp="360" value="-1:80" />
+            <limiter name="Charging" temp="350" value="-1:70" />
         </component>
 
     </components>
@@ -134,6 +134,14 @@
     <scenarios>
         <scenario name="ScreenOff" tempType="SKIN" priority="1" >
             <limiter name="Charging" value="100" />
+        </scenario>
+
+        <scenario name="ScreenOffInCall" tempType="SKIN" priority="1" >
+            <limiter name="Charging" value="70" />
+        </scenario>
+
+        <scenario name="SmartSwitchAppInstall" tempType="SKIN" priority="1" >
+            <limiter name="AppInstallDelay" temp="370:390" value="-1:10000" />
         </scenario>
 
         <scenario name="TPBoost:com.FTATS,com.fafa" tempType="SKIN" >
@@ -160,22 +168,13 @@
             <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
         </scenario>
 
+        <scenario name="Dex" tempType="SKIN" priority="1" >
+            <limiter name="DynamicFpsLevel"     temp="410"             value="-1:30"/>
+        </scenario>
+
         <scenario name="WakeUp" tempType="SKIN" priority="1" >
             <limiter name="CPUFreqMax" cond="for_temporary" value="-1" />
             <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
-        </scenario>
-
-        <scenario name="MultiWindow" tempType="SKIN" priority="2" >
-            <limiter name="LimitHrr"            temp="430"     value="-1:1" />
-        </scenario>
-
-        <scenario name="Navigation" tempType="SKIN" priority="1" >
-            <limiter name="CameraFps"       temp="360:380:420:450" value="-1:24:24:15" />
-        </scenario>
-
-        <scenario name="Dex" tempType="SKIN" priority="2" >
-            <limiter name="LimitHrr"        temp="430" value="-1:1" />
-            <limiter name="DynamicFpsLevel" temp="430" value="-1:30"/>
         </scenario>
 
         <scenario name="LowTemp" tempType="BAT" priority="3" >
@@ -183,36 +182,27 @@
             <limiter name="Charging"   value="-1" />
         </scenario>
 
-        <scenario name="SmartSwitchTransfer" tempType="SKIN" priority="2" >
-            <limiter name="Charging"                    temp="300"                     value="-1:70"       />
-            <limiter name="JobRestriction"              temp="340"                     value="1"           />
-            <limiter name="WifiTput"                    temp="380" p="50" i="2" d="50" unit="0.1" min="400"/>
-            <limiter name="WifiP2pTput"                 temp="380" p="50" i="2" d="50" unit="0.1" min="400"/>
+        <scenario name="AppStore" tempType="SKIN" >
+            <limiter name="AppInstallDelay" temp="300" value="-1:3000:5000" />
         </scenario>
 
-        <scenario name="SmartSwitchAppInstall" tempType="SKIN" priority="1" >
-            <limiter name="Charging"         temp="300"                      value="-1:70" />
-            <limiter name="JobRestriction"   temp="340"                      value="1" />
+        <scenario name="VtCallControl" tempType="SKIN" priority="1">
+            <limiter name="CameraFps"       temp="360" value="-1:1" />
+            <limiter name="CameraFps"       temp="320" value="-1:1" region="China" />
+            <limiter name="CameraFps"       temp="320" value="-1:1" region="Hong Kong" />
+            <limiter name="CameraFps"       temp="320" value="-1:1" region="Taiwan" />
         </scenario>
 
-        <scenario name="retailmode:com.samsung.rms.retailagent.global" tempType="SKIN" priority="1">
-            <limiter name="Charging" value="70" />
-        </scenario>
-
-        <scenario name="scrrensaver:com.samsung.android.retail.screensaver" tempType="SKIN" priority="1">
-            <limiter name="Charging" value="70" />
-        </scenario>
-
-        <scenario name="SPA" tempType="SKIN" priority="3" >
+        <scenario name="SPA" tempType="SKIN" priority="1" >
             <limiter name="CPUFreqMax" cond="for_temporary" value="-1" />
             <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
             <limiter name="OverLimit"                       value="-1" />
         </scenario>
 
         <scenario name="GameSDK" tempType="SKIN" priority="1" >
-            <limiter name="CPUFreqMax" cond="for_temporary" value="-1" />
-            <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
-            <limiter name="OverLimit"  value="-1" />
+            <limiter name="CPUFreqMax" value="-1" />
+            <limiter name="GPUFreqMax" value="-1" />
+            <limiter name="OverLimit" value="-1" />
         </scenario>
 
         <scenario name="SpeedControlForTG" tempType="SKIN" priority="1" >
@@ -227,9 +217,29 @@
             <limiter name="LimitHrr" temp="380" value="-1:1" />
         </scenario>
 
-        <scenario name="LrrControlForTG" tempType="SKIN" priority="1" >
-            <limiter name="LimitHrr" temp="380" value="1" />
-        </scenario>
+        <scenario_group name="GameThermalCpuControl" tempType="SKIN" >
+            <scenario id="-4" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="-3" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="-2" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="-1" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="0"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="1"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="2"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="3"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="4"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="5"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="6"  limiter="CPUFreqMax"          value="-1" />
+            <scenario name="BackgroundCpuset" temp="380"    value="100:200:300" />
+        </scenario_group>
+
+        <scenario_group name="GameThermalGpuControl" tempType="SKIN" >
+            <scenario id="-2" limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="-1" limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="0"  limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="1"  limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="2"  limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="3"  limiter="GPUFreqMax"          value="-1" />
+        </scenario_group>
 
     </scenarios>
 
