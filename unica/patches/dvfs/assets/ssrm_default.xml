@@ -88,6 +88,8 @@
         <limiter name="DexToOatAffinity" default="-1" />
         <!-- CHG -->
         <limiter name="Charging"         default="-1" />
+        <!-- HMT -->
+        <limiter name="HmtLevel"         default="-1" />
         <!-- DISPLAY -->
         <limiter name="Brightness"       default="-1" />
         <!-- SPK -->
@@ -144,6 +146,14 @@
     </components>
 
     <scenarios>
+        <scenario name="TPBoost:com.FTATS,com.fafa" tempType="AP" >
+            <limiter name="CPUFreqMax" value="-1" />
+        </scenario>
+
+        <scenario name="MirroringBoost!ScreenMirroringBooster,ScreenMirroring" tempType="AP" priority="1">
+            <limiter name="CPUFreqMax" temp="370" value="-1" />
+        </scenario>
+
         <scenario name="SIPStart" tempType="AP" priority="1" >
             <limiter name="CPUFreqMax" cond="for_temporary" value="-1" />
             <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
@@ -169,17 +179,28 @@
             <limiter name="Charging"   value="-1" />
         </scenario>
 
-        <scenario name="SPA" tempType="SKIN" priority="1" >
-            <limiter name="CPUFreqMax" cond="for_temporary" value="-1" />
-            <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
-            <limiter name="OverLimit"                       value="-1" />
-        </scenario>
+        <scenario_group name="GameThermalCpuControl" tempType="AP+BAT" >
+            <scenario id="-4" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="-3" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="-2" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="-1" limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="0"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="1"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="2"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="3"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="4"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="5"  limiter="CPUFreqMax" step="0" value="-1" />
+            <scenario id="6"  limiter="CPUFreqMax"          value="-1" />
+        </scenario_group>
 
-        <scenario name="GameSDK" tempType="SKIN" priority="1" >
-            <limiter name="CPUFreqMax" cond="for_temporary" value="-1" />
-            <limiter name="GPUFreqMax" cond="for_temporary" value="-1" />
-            <limiter name="OverLimit"  value="-1" />
-        </scenario>
+        <scenario_group name="GameThermalGpuControl" tempType="AP+BAT" >
+            <scenario id="-2" limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="-1" limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="0"  limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="1"  limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="2"  limiter="GPUFreqMax" step="0" value="-1" />
+            <scenario id="3"  limiter="GPUFreqMax"          value="-1" />
+        </scenario_group>
 
     </scenarios>
 
