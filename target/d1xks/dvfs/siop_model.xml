@@ -70,12 +70,10 @@
 
     <overheatcontrol>
         <complex>
-            <MW formula="LRP*BAT" temp="570.465"/>
-            <LTB formula="LRP*BAT" temp="570.465"/>
-            <LCD formula="LRP*BAT" temp="550.445"/>
-            <GDM formula="LRP*BAT" temp="540.435"/>
-            <GDMLTB formula="LRP*BAT" temp="560.455"/>
-            <SS formula="LRP*BAT" temp="640.510"/>
+            <LTB formula="AP*BAT" temp="500.420" />
+            <SS  formula="AP*BAT*PA" temp="600.470.610" />
+            <GDM formula="AP*BAT" temp="480.390" delta="10"/>
+            <GDMLTB formula="AP*BAT" temp="500.415"/>
         </complex>
     </overheatcontrol>
 
@@ -117,12 +115,12 @@
             <limiter name="AppInstallDelay" temp="420:440:500:520" value="-1:10000:10000:30000" />
         </component>
 
-        <component name="CHG+DISPLAY" tempType="SKIN">
-            <limiter name="Charging" temp="360" value="-1:80" />
+        <component name="CHG+DISPLAY" tempType="LRP*BAT">
+            <limiter name="Charging" temp="0.310:330.330" value="-1:70" />
         </component>
 
         <component name="WIFI" tempType="LRP">
-            <limiter name="WifiTput" tempType="LRP" temp="550" p="50" i="2" d="50" unit="0.1" min="200" />
+            <limiter name="SmartBonding" tempType="LRP" temp="550" p="50" i="2" d="50" unit="0.1" min="200" />
         </component>
 
     </components>
