@@ -120,7 +120,7 @@
         </component>
 
         <component name="WIFI" tempType="LRP">
-            <limiter name="SmartBonding" tempType="LRP" temp="550" p="50" i="2" d="50" unit="0.1" min="200" />
+            <limiter name="SmartBonding" temp="550" value="-1:1" />
         </component>
 
     </components>
