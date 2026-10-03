@@ -71,7 +71,7 @@
     <overheatcontrol>
         <complex>
             <LTB formula="AP*BAT" temp="500.420" />
-            <SS  formula="AP*BAT*PA" temp="600.470.610" />
+            <SS  formula="AP*BAT*PA" temp="640.470.650" />
             <GDM formula="AP*BAT" temp="480.390" delta="10"/>
             <GDMLTB formula="AP*BAT" temp="500.415"/>
         </complex>
