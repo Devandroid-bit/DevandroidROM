@@ -116,8 +116,8 @@
             <limiter name="AppInstallDelay" temp="320:340:400:420" value="-1:10000:10000:30000" />
         </component>
 
-        <component name="CHG+DISPLAY" tempType="SKIN">
-            <limiter name="Charging" temp="360" value="-1:80" />
+        <component name="CHG+DISPLAY" tempType="SKIN*BAT">
+            <limiter name="Charging" temp="0.310:330.330" value="-1:70" />
         </component>
 
         <component name="WIFI" tempType="SKIN">
