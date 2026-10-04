@@ -87,7 +87,7 @@
     <components>
 
         <component name="AP" tempType="SKIN">
-            <limiter name="CPUFreqMax" step="0" temp="350:380:450:470" value="-1:1664000:1664000:1248000" />
+            <limiter name="CPUFreqMax" step="0" temp="350:380:450:470" value="-1:2080000:1664000:1248000" />
             <limiter name="OverLimit" temp="380" value="1820000:1560000:-1" />
             <limiter name="GPUFreqMax" step="0" temp="350:380:450:470" value="-1:377000:377000:260000" />
             <limiter name="AppInstallDelay" temp="320:340:400:420" value="-1:5000:10000:30000" />
