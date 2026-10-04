@@ -113,8 +113,8 @@ DOWNLOAD_FILE()
     return $?
 }
 
-# GET_GALAXY_STORE_DOWNLOAD_URL "<package name>"
-# Returns a URL to download the desidered app from Samsung servers.
+# GET_GALAXY_STORE_DOWNLOAD_URL "<package name/id>"
+# Returns a URL to download the desired app from Samsung servers.
 GET_GALAXY_STORE_DOWNLOAD_URL()
 {
     _CHECK_NON_EMPTY_PARAM "PACKAGE" "$1" || return 1
@@ -122,23 +122,60 @@ GET_GALAXY_STORE_DOWNLOAD_URL()
     local PACKAGE="$1"
     local DEVICES
     local OS
+    local ONEUI
+    local SYSTEMID
+    local PROTOCOL
+
+    # Galaxy S25 Ultra EUR_OPENX
+    # Galaxy S22 Ultra GBL_OPENX
+    # Galaxy S25 Ultra KOR_SINGLEX
+    DEVICES=("SM-S938B" "SM-S901E" "SM-S938N")
+
+    OS="$(GET_PROP "system" "ro.build.version.sdk")"
+    ONEUI="$(GET_PROP "system" "ro.build.version.oneui")"
+    SYSTEMID="$(date "+%s")"
+
+    if [ ! "$OS" ]; then
+        # Fallback to Android 16
+        OS="36"
+    fi
+    if [ ! "$ONEUI" ]; then
+        # Fallback to One UI 8.0
+        ONEUI="80000"
+    fi
+
+    PROTOCOL+="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\" ?>"
+    PROTOCOL+="<SamsungProtocol networkType=\"0\" openApiVersion=\"$OS\" deviceModel=\"DEVICE\""
+    PROTOCOL+=" mcc=\"262\" mnc=\"01\" csc=\"EUX\" version=\"7.7\" systemId=\"$SYSTEMID\""
+    PROTOCOL+=" deviceFeature=\"locale=en_GB||abi32=armeabi-v7a:armeabi||abi64=arm64-v8a||oneUiVersion=$ONEUI\">"
+    PROTOCOL+="<request id=\"2303\" numParam=\"2\">"
+    PROTOCOL+="<param name=\"stduk\">0</param>"
+    PROTOCOL+="<param name=\"productID\">PRODUCTID</param>"
+    PROTOCOL+="</request>"
+    PROTOCOL+="</SamsungProtocol>"
+
     local OUT
-
-    # Galaxy S23 Ultra EUR_OPENX, EUX CSC
-    DEVICES+=("deviceId=SM-S928B&mcc=262&mnc=01&csc=EUX")
-    # Galaxy S25 Ultra CHN_OPENX, CHC CSC
-    DEVICES+=("deviceId=SM-S9380&mcc=460&mnc=00&csc=CHC")
-
-    OS="sdkVer="
-    OS+="$(GET_PROP "system" "ro.build.version.sdk")"
-    OS+="&oneUiVersion="
-    OS+="$(GET_PROP "system" "ro.build.version.oneui")"
-
+    local REQUEST
     for i in "${DEVICES[@]}"; do
-        OUT="$(curl -L -s "https://vas.samsungapps.com/stub/stubDownload.as?appId=$PACKAGE&$i&$OS&extuk=0191d6627f38685f&pd=0")"
-        if grep -q "Download URI Available" <<< "$OUT"; then
-            grep "downloadURI" <<< "$OUT" | cut -d ">" -f 2 | sed -e 's/<!\[CDATA\[//g; s/\]\]//g'
-            return $?
+        if [[ "$PACKAGE" =~ ^[+-]?[0-9]+$ ]]; then
+            OUT="$PACKAGE"
+        else
+            OUT="$(curl -L -s "https://vas.samsungapps.com/stub/stubUpdateCheck.as?appId=$PACKAGE&versionCode=0&deviceId=$i&mcc=262&mnc=01&csc=EUX&sdkVer=$OS&oneUiVersion=$ONEUI&systemId=$SYSTEMID")"
+            OUT="$(grep -o -P "(?<=<productId>)[^<]+" <<< "$OUT")"
+            if [ ! "$OUT" ]; then
+                continue
+            fi
+        fi
+
+        REQUEST="$PROTOCOL"
+        REQUEST="${REQUEST//DEVICE/$i}"
+        REQUEST="${REQUEST//PRODUCTID/$OUT}"
+
+        OUT="$(curl -L -s "https://uk-odc.samsungapps.com/ods.as" -H "Content-Type: text/plain" -d "$REQUEST")"
+        OUT="$(grep -o -P "(?<=<value name=\"downLoadURI\">)[^<]+" <<< "$OUT")"
+        if [ "$OUT" ]; then
+            echo "${OUT//amp;/}"
+            return 0
         fi
     done
 
