@@ -17,7 +17,7 @@
 
 ## Project scope
 
-DevAndroidROM uses the [UN1CA] build system as its build-framework foundation. UN1CA provides the firmware acquisition, extraction, patch application, and flashable-package workflow used by the project.
+DevAndroidROM uses the **[UN1CA](https://github.com/salvogiangri/UN1CA)** build system as its build-framework foundation. UN1CA provides the firmware acquisition, extraction, patch application, and flashable-package workflow used by the project.
 
 The project is based on Samsung Galaxy S22 firmware and adapted specifically for the Exynos Galaxy Note10 series.
 
@@ -30,7 +30,7 @@ The Galaxy Note10 adaptation additionally uses device-specific knowledge, config
 | Project | Role in DevAndroidROM |
 |---|---|
 | **[Maniac-ROM](https://github.com/ricci206/Maniac-ROM)** | Original project base and an important part of the project's upstream lineage. |
-| **[UNICA](https://github.com/salvogiangri/UN1CA)** | Primary build system and firmware-to-package workflow. |
+| **[UN1CA](https://github.com/salvogiangri/UN1CA)** | Primary build system and firmware-to-package workflow. |
 | **[EternityROM](https://github.com/Ocin4ever/EternityROM/tree/fifteen)** | Important Galaxy Note10-series porting reference, including device-specific configurations and patches. |
 | **[ExtremeROM](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen)** | Historical reference for device adaptation, porting practices, and project structure. |
 
@@ -175,7 +175,7 @@ Kernel and device-tree sources must always be selected according to the exact de
 
 ## References
 
-- **[UNICA](https://github.com/salvogiangri/UN1CA)**
+- **[UN1CA](https://github.com/salvogiangri/UN1CA)**
 - **[Maniac-ROM](https://github.com/ricci206/Maniac-ROM)**
 - **[EternityROM](https://github.com/Ocin4ever/EternityROM/tree/fifteen)**
 - **[ExtremeROM](https://github.com/ExtremeXT/ExtremeROM/tree/fifteen)**
