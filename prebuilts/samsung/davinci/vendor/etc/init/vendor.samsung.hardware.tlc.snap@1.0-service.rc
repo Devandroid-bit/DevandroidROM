@@ -1,0 +1,7 @@
+service snapsec /vendor/bin/hw/vendor.samsung.hardware.tlc.snap@1.0-service
+    interface vendor.samsung.hardware.tlc.snap@1.0::ISehSnapSec default
+    class hal
+    user system
+    group system
+    oneshot
+    disabled
