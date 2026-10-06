@@ -15,7 +15,6 @@
 /vendor/etc/vintf/manifest/vendor\.samsung\.hardware\.snap-default\.xml u:object_r:vendor_configs_file:s0
 /vendor/etc/vintf/manifest/vendor\.samsung\.hardware\.tlc\.snap@1\.0-manifest\.xml u:object_r:vendor_configs_file:s0
 /vendor/lib64 u:object_r:vendor_file:s0
-/vendor/lib64/libsnap_compute\.so u:object_r:vendor_file:s0
 /vendor/lib64/libsnap_compute_wrapper\.so u:object_r:vendor_file:s0
 /vendor/lib64/libsnap_vndk\.so u:object_r:vendor_file:s0
 /vendor/lib64/libsnaplite_native\.so u:object_r:vendor_file:s0
