@@ -15,7 +15,6 @@ vendor/etc/vintf/manifest 0 2000 755 capabilities=0x0
 vendor/etc/vintf/manifest/vendor.samsung.hardware.snap-default.xml 0 0 644 capabilities=0x0
 vendor/etc/vintf/manifest/vendor.samsung.hardware.tlc.snap@1.0-manifest.xml 0 0 644 capabilities=0x0
 vendor/lib64 0 2000 755 capabilities=0x0
-vendor/lib64/libsnap_compute.so 0 0 644 capabilities=0x0
 vendor/lib64/libsnap_compute_wrapper.so 0 0 644 capabilities=0x0
 vendor/lib64/libsnap_vndk.so 0 0 644 capabilities=0x0
 vendor/lib64/libsnaplite_native.so 0 0 644 capabilities=0x0
