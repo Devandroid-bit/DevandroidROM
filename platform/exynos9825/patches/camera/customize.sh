@@ -87,6 +87,12 @@ DELETE_FROM_WORK_DIR "system" "system/priv-app/SamsungCamera/SamsungCamera.apk.p
 DELETE_FROM_WORK_DIR "system" "system/app/FilterProvider/oat"
 LOG_STEP_OUT
 
+LOG_STEP_IN "- Pinning the source-generation FilterProvider"
+DELETE_FROM_WORK_DIR "system" "system/app/FilterProvider/FilterProvider.apk"
+ADD_TO_WORK_DIR "$FW_DIR/$SOURCE_FIRMWARE_PATH" "system" \
+    "system/app/FilterProvider/FilterProvider.apk" 0 0 644 "u:object_r:system_file:s0"
+LOG_STEP_OUT
+
 LOG_STEP_IN "- Fixing AI Photo Editor"
 cp -a --preserve=all \
     "$WORK_DIR/system/system/cameradata/portrait_data/single_bokeh_feature.json" \
