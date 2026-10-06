@@ -1,7 +1,3 @@
-SKIPUNZIP=1
-MODEL=$(echo -n "$TARGET_FIRMWARE" | cut -d "/" -f 1)
-REGION=$(echo -n "$TARGET_FIRMWARE" | cut -d "/" -f 2)
-
 LOG_STEP_IN "- Replacing camera blobs"
 BLOBS_LIST="
 system/lib64/libenn_wrapper_system.so
