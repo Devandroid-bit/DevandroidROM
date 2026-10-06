@@ -1,3 +1,7 @@
+SKIPUNZIP=1
+MODEL=$(echo -n "$TARGET_FIRMWARE" | cut -d "/" -f 1)
+REGION=$(echo -n "$TARGET_FIRMWARE" | cut -d "/" -f 2)
+
 LOG_STEP_IN "- Replacing camera blobs"
 BLOBS_LIST="
 system/lib64/libenn_wrapper_system.so
@@ -89,7 +93,7 @@ LOG_STEP_OUT
 
 LOG_STEP_IN "- Pinning the source-generation FilterProvider"
 DELETE_FROM_WORK_DIR "system" "system/app/FilterProvider/FilterProvider.apk"
-ADD_TO_WORK_DIR "$FW_DIR/$SOURCE_FIRMWARE_PATH" "system" \
+ADD_TO_WORK_DIR "$SOURCE_FIRMWARE" "system" \
     "system/app/FilterProvider/FilterProvider.apk" 0 0 644 "u:object_r:system_file:s0"
 LOG_STEP_OUT
 
