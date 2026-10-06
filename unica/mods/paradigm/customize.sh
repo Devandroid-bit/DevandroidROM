@@ -63,8 +63,8 @@ APPLY_PATCH "system_ext" "priv-app/SystemUI/SystemUI.apk" \
     "$MODPATH/ead/SystemUI.apk/0001-Add-Adaptive-color-tone-toggle.patch"
 LOG_STEP_OUT
 
-# Set AI Version to 20251
-SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_AI_VERSION" "20251"
+# Set AI Version to 20261
+SET_FLOATING_FEATURE_CONFIG "SEC_FLOATING_FEATURE_COMMON_CONFIG_AI_VERSION" "20261"
 ADD_TO_WORK_DIR "pa2qxxx" "system" "system/app/SketchBook/SketchBook.apk" 0 0 644 "u:object_r:system_file:s0"
 
 # Media Context Analyzer
