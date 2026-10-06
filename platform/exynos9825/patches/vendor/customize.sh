@@ -114,3 +114,4 @@ ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/libtlc_direct_comm_snap.so"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/vendor.samsung.hardware.snap-V1-ndk.so"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/vendor.samsung.hardware.tlc.snap@1.0-impl.so"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/vendor.samsung.hardware.tlc.snap@1.0.so"
+LOG_STEP_OUT
