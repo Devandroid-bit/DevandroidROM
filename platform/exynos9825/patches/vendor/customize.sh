@@ -104,7 +104,6 @@ ADD_TO_WORK_DIR "davinci" "vendor" "vendor/etc/init/vendor.samsung.hardware.tlc.
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/etc/snap_gpu_kernel_64.bin"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/etc/vintf/manifest/vendor.samsung.hardware.snap-default.xml"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/etc/vintf/manifest/vendor.samsung.hardware.tlc.snap@1.0-manifest.xml"
-ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/libsnap_compute.so"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/libsnap_compute_wrapper.so"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/libsnap_vndk.so"
 ADD_TO_WORK_DIR "davinci" "vendor" "vendor/lib64/libsnaplite_native.so"
