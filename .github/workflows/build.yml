@@ -1,3 +1,4 @@
+
 name: Build DevandroidROM
 
 on:
@@ -8,6 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +25,7 @@ jobs:
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
-          sudo docker builder prune -a
+          sudo docker builder prune -a --force
 
       - name: Free disk space (2/3)
         uses: jlumbroso/free-disk-space@main
@@ -36,16 +38,69 @@ jobs:
           retain: 'compiler_cmake'
 
       - name: Set up build environment
+        shell: bash
         run: |
-          sudo apt update
-          DEBIAN_FRONTEND=noninteractive sudo apt install -yq \
-            p7zip-full jq attr ccache clang ffmpeg golang \
-            libbrotli-dev libgtest-dev libprotobuf-dev libunwind-dev libpcre2-dev \
-            libzstd-dev linux-modules-extra-$(uname -r) lld protobuf-compiler webp \
-            curl xxd patchelf flex bison libarchive-tools build-essential pcre2-utils
-          sudo modprobe erofs f2fs
+          set -euo pipefail
+
+          echo "Runner kernel: $(uname -r)"
+          echo "Ubuntu version:"
+          lsb_release -a || true
+
+          sudo apt-get update
+
+          PACKAGES=(
+            p7zip-full
+            jq
+            attr
+            ccache
+            clang
+            ffmpeg
+            golang
+            libbrotli-dev
+            libgtest-dev
+            libprotobuf-dev
+            libunwind-dev
+            libpcre2-dev
+            libzstd-dev
+            lld
+            protobuf-compiler
+            webp
+            curl
+            xxd
+            patchelf
+            flex
+            bison
+            libarchive-tools
+            build-essential
+            pcre2-utils
+          )
+
+          # linux-modules-extra is not available for some newer
+          # GitHub Actions Azure kernels (including Ubuntu 7.x runners).
+          KERNEL_VERSION="$(uname -r)"
+          KERNEL_MAJOR="${KERNEL_VERSION%%.*}"
+
+          if (( KERNEL_MAJOR < 7 )); then
+            PACKAGES+=("linux-modules-extra-${KERNEL_VERSION}")
+          fi
+
+          sudo apt-get install -y "${PACKAGES[@]}"
+
+          # Verify and load required filesystem modules.
+          for module in erofs f2fs; do
+            if ! sudo modprobe "$module"; then
+              echo "::error::Unable to load required kernel module: $module"
+              modinfo "$module" || true
+              exit 1
+            fi
+
+            echo "Successfully loaded: $module"
+          done
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Restore platform signing keys.
           echo -n "${{ secrets.PLATFORM_KEY_PK8 }}" | base64 --decode > security/extremerom_platform.pk8
           echo -n "${{ secrets.PLATFORM_KEY_PEM }}" | base64 --decode > security/extremerom_platform.x509.pem
 
@@ -57,74 +112,114 @@ jobs:
           cache: 'gradle'
 
       - name: Fix script permissions
+        shell: bash
         run: |
+          set -euo pipefail
+
           echo "Fixing permissions for all shell scripts..."
+
           find . -type f -name "*.sh" -exec chmod +x {} \;
           find ./scripts -type f -exec chmod +x {} \;
+
           chmod +x ./scripts/make_rom.sh
           chmod +x ./scripts/internal/build_flashable_zip.sh
+
           echo "Verifying permissions:"
           ls -la ./scripts/make_rom.sh
           ls -la ./scripts/internal/build_flashable_zip.sh
+
           echo "All script permissions fixed!"
 
       - name: Build dependencies
+        shell: bash
         run: |
+          set -euo pipefail
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/build_dependencies.sh
 
       - name: Download source firmware
+        shell: bash
         run: |
+          set -euo pipefail
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/download_fw.sh --force --ignore-target
 
       - name: Extract source firmware
+        shell: bash
         run: |
+          set -euo pipefail
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/extract_fw.sh --force --ignore-target
 
       - name: Download target firmware
+        shell: bash
         run: |
+          set -euo pipefail
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/download_fw.sh --force --ignore-source
 
       - name: Extract target firmware
+        shell: bash
         run: |
+          set -euo pipefail
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/extract_fw.sh --force --ignore-source
 
       - name: Create Swap Space
+        shell: bash
         run: |
+          set -euo pipefail
+
           sudo swapoff -a || true
           sudo rm -f /swapfile
+
           sudo fallocate -l 12G /swapfile
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
+
+          echo "Active swap:"
           sudo swapon --show
-      
+          free -h
+
       - name: Build ROM
+        shell: bash
         run: |
+          set -euo pipefail
           source ./buildenv.sh ${{ matrix.target }}
           ./scripts/make_rom.sh --force
 
       - name: Upload ROM to GoFile
+        shell: bash
         run: |
-          # Find the exact flashable ZIP generated by the build script
+          set -euo pipefail
+
+          # Find the flashable ZIP generated by the build script.
           ROM_FILE=$(find out -maxdepth 1 -type f -name "*.zip" | head -n 1)
-          
+
           if [ -z "$ROM_FILE" ]; then
-            echo "Error: Flashable ZIP not found!"
+            echo "::error::Flashable ZIP not found!"
             exit 1
           fi
 
           echo "Found ROM ZIP: $ROM_FILE"
           echo "Uploading to GoFile..."
-          
-          RESPONSE=$(curl -s -F "file=@$ROM_FILE" \
+
+          RESPONSE=$(curl --fail-with-body -sS \
+            -F "file=@${ROM_FILE}" \
             -F "token=${{ secrets.GOFILE_TOKEN }}" \
             -F "folderId=${{ secrets.GOFILE_FOLDER }}" \
             "https://upload-eu-par.gofile.io/uploadFile")
-          
-          echo "Uploaded successfully! Download link:"
-          echo "$RESPONSE" | jq -r '.data.downloadPage'
+
+          echo "GoFile response:"
+          echo "$RESPONSE" | jq .
+
+          DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.data.downloadPage // empty')
+
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo "::error::GoFile upload failed or returned no download URL."
+            exit 1
+          fi
+
+          echo "Upload successful!"
+          echo "Download link: $DOWNLOAD_URL"
